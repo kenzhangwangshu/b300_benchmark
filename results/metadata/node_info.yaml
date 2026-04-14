@@ -1,0 +1,76 @@
+node:
+  hostname: howell
+  facility: ARK H212, Akron Ohio
+  gpus: 8x NVIDIA B300 SXM6 AC
+  gpus_detail:
+    count: 8
+    model: NVIDIA B300 SXM6 AC
+    compute_capability: sm_103a
+    vram_per_gpu_mib: 275040
+    vram_total_mib: 2200320
+  driver: 590.48.01
+  cuda_runtime: "13.1"                # reported by nvidia-smi
+  cuda_toolkit: "13.0.48"              # nvcc version on host
+  os: Ubuntu 22.04.5 LTS
+  kernel: 5.15.0-119-generic
+  python: 3.10.12
+  cpu:
+    model: Intel(R) Xeon(R) 6776P
+    sockets: 2
+    cores_per_socket: 64
+    threads_per_core: 2
+    total_threads: 256
+  ram:
+    total: 2.0 TiB
+    swap: 8.0 GiB
+  probed_at: 2026-04-13
+
+containers:
+  vllm:
+    image: nvcr.io/nvidia/vllm:26.01-py3
+    vllm_version: 0.13.0
+    python: 3.12
+    pulled: true
+    notes: |
+      - EP+NVFP4 broken — ModelOptNvFp4FusedMoE's cutlass_moe_fp4 kernel
+        rejects expert_map, so --enable-expert-parallel causes "Expert
+        Parallelism / expert_map is currently not supported" at startup.
+      - DeepGEMM unavailable (26.01 ships Cutlass BlockScaled GroupedGemm
+        for FP8 MoE instead of the faster 26.03 DeepGEMM E8M0 path).
+      - Missing B300 MoE config file for FP8: E=64,N=1536,device_name=
+        NVIDIA_B300_SXM6_AC,dtype=fp8_w8a8,block_shape=[128,128].json
+      - Cold start ~7 min (FlashInfer JIT + torch.compile + CUDA graphs).
+      - Used for 10 M2.7 NVFP4 1k1k baseline JSONs now in results/vllm/;
+        retained for historical reference. Going forward SGLang is primary.
+
+  sglang:
+    image: lmsysorg/sglang:latest-cu130-runtime
+    sglang_version: 0.5.10.post1
+    python: 3.12                       # inferred; matches sglang image family
+    pulled: true
+    notes: |
+      - EP+NVFP4 status: flag_supported (--expert-parallel-size N in
+        --help), runtime verification pending via the EP=8 relaunch.
+      - On B300 (detected as B200-class), SGLang automatically disables
+        CUTLASS MoE backend due to a TMA descriptor init issue with
+        piecewise CUDA graphs, falling back to `auto` backend for
+        stability. Startup log: "CUTLASS backend is disabled when
+        piecewise cuda graph is enabled due to TMA descriptor init
+        issues on B200. Using auto backend instead for stability."
+      - Default attention backend: trtllm_mha.
+      - enable_torch_compile: False (SGLang uses CUDA graphs instead).
+      - disable_cuda_graph: False (CUDA graphs enabled).
+      - sglang.bench_serving default does NOT wire ignore_eos through
+        the sglang-oai-chat backend on 0.5.10.post1 — must pass
+        --extra-request-body '{"ignore_eos": true}' to get exact
+        random_output_len generation. Without it, the model hits
+        natural EOS early (~509 tokens out of 1024 on M2.7-NVFP4).
+        Already baked into bench_sweep.sh's sglang branch.
+      - Cold start ~2 min (weight load 45 s + CUDA graph capture ~1 min);
+        much faster than vLLM because there is no torch.compile phase.
+
+  image_sizes_note: |
+    Exact docker image sizes are not recorded here because `sudo docker
+    images` requires the bench tty's cached sudo, which is occupied by
+    the active sweep. Fetch when convenient:
+      sudo docker images --format '{{.Repository}}:{{.Tag}} {{.Size}}'

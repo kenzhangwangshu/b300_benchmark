@@ -1,0 +1,129 @@
+model:
+  name: Kimi-K2.5
+  hf_id: nvidia/Kimi-K2.5-NVFP4
+  architecture: MoE (DeepSeek-V3 class, multi-head latent attention)
+  trust_remote_code: true
+  custom_modules:
+    - modeling_deepseek.py
+    - modeling_kimi_k25.py
+    - tokenization_kimi.py        # custom tiktoken-based tokenizer
+  vocab_size: 163840
+  context_len: 262144              # 256K context window
+  bos_id: 163584
+  eos_id: 163585
+
+serving:
+  framework: sglang
+  container: lmsysorg/sglang:latest-cu130-runtime
+  sglang_version: 0.5.10.post1
+  port: 30000
+  tp: 8
+  # ep status (2026-04-14):
+  #   - flag_supported: YES (--expert-parallel-size N exists in launch_server)
+  #   - runtime_verified: BROKEN (inferred, not directly tested on Kimi).
+  #     The same modelopt_quant.py:1754 weight loader path that crashes on
+  #     M2.7 NVFP4 EP=8 also runs for Kimi NVFP4. The bug replicates
+  #     w13_input_scale across all experts but EP-shards w13_weight_scale_2
+  #     to per-rank — the element-wise multiply explodes on dim 0. Kimi has
+  #     a different expert count, but the bug is shape-independent.
+  #     We did NOT directly test Kimi EP=8 to save time; M2.7 was sufficient
+  #     evidence that the loader path is broken. Re-test Kimi EP if SGLang
+  #     ships a fix to modelopt_quant.process_weights_after_loading.
+  ep: 1
+  ep_runtime_verified: false_inferred_from_m27
+  max_model_len: 16384             # default; Kimi advertises 262144 but we cap for sweeps
+  extra_flags:
+    - --trust-remote-code
+    - --quantization modelopt_fp4
+
+# Server runtime (observed at startup):
+runtime_observed:
+  max_total_num_tokens: 4235200    # KV pool, smaller than M2.7's 7.48M because MLA is compact
+  max_running_requests: 4096
+  chunked_prefill_size: 16384
+  available_gpu_mem_per_rank_gb: 37.07
+  attention_backend: trtllm_mha    # same as M2.7 default
+  moe_runner_backend: auto         # CUTLASS auto-disabled on B300, same TMA workaround
+  cold_start_sec: ~120             # weight load + CUDA graph capture; faster than expected
+
+benchmark:
+  seq_lens: [1k1k, 1k4k, 4k1k]
+  concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+
+# ---------- Results so far ----------
+
+results:
+  "1k1k":
+    completed_concurrencies: [1, 2, 4, 8, 16, 32, 64, 128]
+    skipped: [256, 512]
+    skip_reason: |
+      Throughput plateaued at ~2600 t/s by conc=64. conc=32→64 gained
+      +4.3%, conc=64→128 gained +0.6% — effectively flat. Pushing to
+      256/512 would only add latency without adding throughput, so the
+      sweep was stopped at conc=128 to save time. The curve IS complete
+      to its knee; document this in the writeup.
+    headline_numbers:
+      conc_1: { out_tps: 170.3, mean_tpot_ms: 5.62, mean_ttft_ms: 260.2 }
+      conc_4: { out_tps: 563.0, mean_tpot_ms: 6.72, mean_ttft_ms: 403.3 }
+      conc_16: { out_tps: 1555.9, mean_tpot_ms: 9.73, mean_ttft_ms: 577.4 }
+      conc_32: { out_tps: 2472.0, mean_tpot_ms: 12.17, mean_ttft_ms: 798.5 }
+      conc_64: { out_tps: 2579.1, mean_tpot_ms: 23.58, mean_ttft_ms: 1274.4 }
+      conc_128: { out_tps: 2595.1, mean_tpot_ms: 46.94, mean_ttft_ms: 2462.2 }
+    json_dir: ~/benchmark/results/sglang/kimi-k2.5/json/
+    sweet_spot: conc=32 (peak throughput before TPOT degradation kicks in)
+    architectural_signature: |
+      Kimi is in the DeepSeek-V3 / MLA family, so KV cache per token is very
+      compact. Decode is fast (TPOT 5–10 ms at low concurrency, much better
+      than M2.7's 9.5–13 ms). But Kimi has more active params per token, so
+      prefill is slow (TTFT ~260 ms at conc=1 vs M2.7's ~45 ms). The model
+      saturates much earlier (~conc=64) than M2.7 (which scaled to conc=512)
+      because Kimi is ~5× larger (591 GB vs 115 GB) so per-rank memory and
+      compute are tighter.
+
+  "1k4k":
+    status: not_yet_run
+  "4k1k":
+    status: not_yet_run
+
+# ---------- Known caveats / things to flag in the writeup ----------
+
+caveats:
+  slow_tokenizer_warmup_path:
+    severity: low
+    impact: TTFT inflated by roughly 10–30% on every request
+    discovered: 2026-04-14 during 1k1k sweep
+    cause: |
+      Kimi ships its own KimiTokenizer (tokenization_kimi.py:160) with a
+      fast tiktoken-based encode() path. The fast path is incompatible with
+      HF PreTrainedTokenizer.encode() — it doesn't honor add_special_tokens
+      and uses different defaults for split_special_tokens. When ANY caller
+      passes kwargs (e.g. add_special_tokens=False), the implementation
+      falls through to super().encode() and emits a logger.warning:
+          "Calling super().encode with {'add_special_tokens': False}"
+      The slow super() path goes through HF's generic Python tokenizer
+      machinery instead of tiktoken — measurably slower per encode call.
+    where: tokenization_kimi.py:178
+    triggered_by: |
+      SGLang's chat-template preprocessor passes add_special_tokens=False
+      when tokenizing a rendered chat template (correct behavior — the
+      template already contains the right special tokens). Kimi's
+      tokenizer doesn't recognize that this kwarg is harmless and bails
+      to the slow path anyway.
+    how_often: once per request (not per token), so the cost lives in TTFT
+    measured_ttft_at_conc_1: 260 ms  # vs M2.7 SGLang's ~45 ms at the same shape
+    measured_ttft_at_conc_2: 387 ms
+    measured_ttft_at_conc_4: 403 ms
+    not_patched: |
+      Decision (2026-04-14): leave it. The slow path applies uniformly to
+      every Kimi sweep, so internal comparisons (across concurrencies,
+      profiles, frameworks) remain consistent. The reported Kimi TTFT
+      numbers are pessimistic by ~10–30% relative to what the model
+      could deliver if the chat preprocessor dropped the kwarg.
+    upstream_fix_options:
+      - "SGLang side: stop passing add_special_tokens=False to the tokenizer when the chat template already includes specials"
+      - "Kimi side: make the fast path honor add_special_tokens=False since dropping specials is a strict subset of the default behavior"
+      - "Sandwich: monkey-patch tokenization_kimi.encode to ignore the kwarg if it equals False (correctness depends on chat-template generating identical token sequences either way — would need a sanity check)"
+    flag_in_writeup: |
+      Kimi K2.5 TTFT numbers reported here use the slow tokenizer fall-back
+      path; the model can deliver materially lower TTFT once the SGLang
+      chat preprocessor drops the redundant add_special_tokens=False kwarg.

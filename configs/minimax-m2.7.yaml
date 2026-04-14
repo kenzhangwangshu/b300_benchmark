@@ -1,0 +1,128 @@
+model:
+  name: MiniMax-M2.7
+  hf_id: MiniMaxAI/MiniMax-M2.7
+  hf_id_fp4: lukealonso/MiniMax-M2.7-NVFP4
+  architecture: MoE
+  total_params: 230B
+  active_params: 10B
+  experts: 256
+  license: modified-mit (non-commercial)
+
+serving:
+  framework: sglang
+  container: lmsysorg/sglang:latest-cu130-runtime
+  sglang_version: 0.5.10.post1
+  port: 30000
+  tp: 8
+  # ep flag status on SGLang 0.5.10.post1 / B300 (verified 2026-04-14 00:52):
+  #   - flag_supported:    YES (--expert-parallel-size N)
+  #   - runtime_verified:  BROKEN — model load fails before serving
+  #   - failure_mode:      RuntimeError in
+  #                          sglang/srt/layers/quantization/modelopt_quant.py:1754
+  #                          (w13_input_scale * w13_weight_scale_2)
+  #                          shape mismatch: tensor a (256) vs tensor b (32)
+  #                        ModelOpt weight post-processing replicates
+  #                        w13_input_scale across all 256 experts but
+  #                        EP-shards w13_weight_scale_2 to 32 per rank.
+  #                        The element-wise multiply explodes on dim 0.
+  #   - ep8_split_intent:  256 experts / 8 ranks = 32 experts per rank
+  # Both vLLM 0.13.0 and SGLang 0.5.10.post1 fail at runtime, in different
+  # layers:
+  #   - vLLM:   cutlass_moe_fp4 kernel rejects expert_map at dispatch
+  #   - SGLang: ModelOpt weight loader produces inconsistent shapes during
+  #             process_weights_after_loading
+  # Worth retesting on the next SGLang release (likely fix in
+  # modelopt_quant.py to shard input_scale alongside weight_scale_2).
+  ep: broken_in_sglang_0.5.10.post1_modelopt_loader
+  recommended_ep: 1   # forced TP-only until the loader bug is fixed
+  ep_workarounds_to_try:
+    - "--moe-runner-backend flashinfer_trtllm  # may bypass modelopt_quant path"
+    - "use a different M2.7 NVFP4 checkpoint (re-quantize with --moe-data-parallel-size aware ModelOpt)"
+    - "wait for SGLang fix to modelopt_quant.process_weights_after_loading"
+  max_model_len: 16384
+  extra_flags:
+    - --trust-remote-code
+    - --quantization modelopt_fp4
+  # Optional / advanced flags not set by default but documented here:
+  #   --expert-parallel-size 8              enables EP (queued for test run)
+  #   --moe-runner-backend auto             SGLang auto-picks; on B200-class
+  #                                          it will disable CUTLASS due to
+  #                                          a TMA descriptor init issue
+  #                                          with piecewise CUDA graphs and
+  #                                          fall back to auto backend for
+  #                                          stability (warning visible in
+  #                                          startup logs).
+  #   --moe-runner-backend flashinfer_trtllm
+  #                                          alt path to try if auto is slow;
+  #                                          avoids CUTLASS entirely, uses
+  #                                          flashinfer's TRTLLM kernel
+  #   --ep-num-redundant-experts N          load-balancing tweak, try later
+  #   --disable-shared-experts-fusion       diagnostic only, default is fused
+
+benchmark:
+  seq_lens: [1k1k, 1k4k, 4k1k]
+  concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+
+# ---------- Results (only 1k1k completed so far) ----------
+
+results:
+  vllm_1k1k:
+    framework: vllm
+    container: nvcr.io/nvidia/vllm:26.01-py3
+    completed_concurrencies: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+    json_dir: ~/benchmark/results/vllm/minimax-m2.7/json/
+    headline:
+      conc_1:    { out_tps:    73.3, mean_tpot_ms: 13.54, mean_ttft_ms:  121.2 }
+      conc_64:   { out_tps:  2798.9, mean_tpot_ms: 22.65, mean_ttft_ms:  234.1 }
+      conc_256:  { out_tps:  7423.2, mean_tpot_ms: 34.02, mean_ttft_ms:  458.4 }
+      conc_512:  { out_tps: 10042.0, mean_tpot_ms: 50.15, mean_ttft_ms:  791.4 }
+
+  sglang_1k1k:
+    framework: sglang
+    container: lmsysorg/sglang:latest-cu130-runtime
+    completed_concurrencies: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+    json_dir: ~/benchmark/results/sglang/minimax-m2.7/json/
+    headline:
+      conc_1:    { out_tps:   104.5, mean_tpot_ms:  9.53, mean_ttft_ms:   44.9 }
+      conc_64:   { out_tps:  3133.9, mean_tpot_ms: 19.91, mean_ttft_ms:  532.8 }
+      conc_256:  { out_tps:  8582.3, mean_tpot_ms: 28.01, mean_ttft_ms: 1813.9 }
+      conc_512:  { out_tps: 10283.8, mean_tpot_ms: 46.20, mean_ttft_ms: 3483.9 }
+
+  comparison_summary:
+    conc_1:   "SGL +42.7% throughput, -63% TTFT, -30% TPOT"
+    conc_64:  "SGL +12% throughput, -12% TPOT, +127% TTFT (regression starts)"
+    conc_512: "SGL +2.4% throughput (tied), -8% TPOT, +340% TTFT (catastrophic)"
+    sweet_spots:
+      sglang: conc=1 to 32 (interactive)
+      vllm:   conc=128 and above (high-throughput batch)
+    note: |
+      SGLang's TTFT scales linearly with concurrency on B300 (533 → 959 →
+      1814 → 3484 ms across conc=64..512). vLLM scales sublinearly. Likely
+      tied to the CUTLASS MoE auto-disable / TMA fallback on B200-class.
+      Untested follow-up: --moe-runner-backend flashinfer_trtllm.
+
+  sglang_1k4k:
+    status: not_yet_run
+  sglang_4k1k:
+    status: not_yet_run
+
+notes:
+  - EP+NVFP4 was broken on vLLM 0.13.0 (NGC 26.01). EP=8 was also runtime-
+    verified BROKEN on SGLang 0.5.10.post1 (different layer — modelopt
+    weight loader, not kernel dispatch). See `serving.ep` block above for
+    the full trace and workarounds.
+  - vLLM 1k1k results preserved in ~/benchmark/results/vllm/minimax-m2.7/
+    for direct apples-to-apples comparison with SGLang.
+  - 1k8k/8k1k retired in favor of 1k4k/4k1k (faster sweeps, same signal).
+  - max-model-len raised from 8192 to 16384 to accommodate ISL+OSL of all
+    three profiles with headroom.
+  - On B300 the startup log reports "CUTLASS backend is disabled when
+    piecewise cuda graph is enabled due to TMA descriptor initialization
+    issues on B200. Using auto backend instead for stability." Stable but
+    possibly not peak MoE perf and likely related to the SGLang TTFT
+    regression at high concurrency. Follow-up: try
+    --moe-runner-backend flashinfer_trtllm.
+  - Containers used:
+      vLLM:   m27nvfp4 (TP=8, EP=1, max-model-len=16384) — historical
+      SGLang: m27-sglang (TP=8, EP=1, max-model-len=16384) — main results
+      SGLang EP=8: m27-sglang-ep8 — FAILED at model load, removed

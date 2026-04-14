@@ -1,0 +1,88 @@
+model: lukealonso/MiniMax-M2.7-NVFP4
+framework: sglang
+container_name: m27-sglang
+container_image: lmsysorg/sglang:latest-cu130-runtime
+sglang_version: 0.5.10.post1
+launched_at: 2026-04-13T23:02-23:03Z
+ready_at: 2026-04-13T23:07Z
+cold_start_estimate_sec: 270        # ~4.5 min docker run → server ready
+probe_source:
+  - server_info field of conc=1 1k1k JSON
+  - live tmux capture during weight load and CUDA graph capture phases
+  - no live server logs were interrupted for this probe
+
+serving_config:
+  model_path: lukealonso/MiniMax-M2.7-NVFP4
+  tensor_parallel_size: 8
+  expert_parallel_size: 1              # NOT enabled on this container
+  pipeline_parallel_size: 1
+  max_model_len: 16384
+  quantization: modelopt_fp4
+  quant_algo: NVFP4
+  trust_remote_code: true
+  host: 0.0.0.0
+  port: 30000
+  extra_flags:
+    - --trust-remote-code
+    - --quantization modelopt_fp4
+  # Flags NOT set (defaults):
+  #   --moe-runner-backend    default "auto"
+  #   --enable-torch-compile  not set (torch.compile disabled)
+  #   --disable-cuda-graph    not set (CUDA graphs enabled)
+
+runtime_backends:
+  attention_backend: trtllm_mha
+  moe_runner_backend: auto             # startup log: "CUTLASS backend is
+                                       # disabled when piecewise cuda graph
+                                       # is enabled due to TMA descriptor
+                                       # initialization issues on B200.
+                                       # Using auto backend instead for
+                                       # stability." SGLang detects B300 as
+                                       # B200-class and takes this fallback.
+  enable_torch_compile: false
+  disable_cuda_graph: false            # CUDA graphs ARE enabled
+  kv_cache_dtype: auto
+
+weight_load:
+  elapsed_sec_per_rank: 44.98-45.60    # observed across TP0..TP7
+  weight_mem_per_rank_gb: 17.60
+  weight_mem_total_gb: 140.8           # 8 ranks
+
+kv_cache:
+  max_total_num_tokens: 7478016        # per-server total token budget
+  per_rank:
+    k_size_gb: 110.54
+    v_size_gb: 110.54
+    total_gb: 221.08
+  aggregate_gb: 1768.64                # 8 ranks combined
+  available_mem_after_alloc_per_rank_gb: 23.78-24.09
+
+cuda_graph_capture:
+  started_at: "2026-04-13T23:05:14Z"
+  batch_shapes_captured: 52            # "Capturing batches (bs=512 avail_mem=
+                                       # 22.48 GB): 0%|  | 0/52"
+  notes: |
+    52 batch shape variants recorded for piecewise CUDA graphs. SGLang's
+    piecewise-graph strategy is the reason for the B200 TMA fallback on
+    MoE: full CUTLASS MoE path conflicts with piecewise graph capture, so
+    the runtime auto-switches MoE backend to "auto" while still keeping
+    CUDA graphs enabled for attention/decode paths.
+
+probes_recorded_pre_bench:
+  - warmup_curl_returned_200: true
+  - warmup_response_model_id: lukealonso/MiniMax-M2.7-NVFP4
+  - warmup_input_tokens: 39
+  - warmup_completion_tokens: 16
+
+known_issues:
+  - |
+    sglang.bench_serving via backend=sglang-oai-chat does not propagate
+    ignore_eos=true unless explicitly passed via --extra-request-body.
+    Without the flag the server honors the model's natural EOS, which
+    truncated 1k1k completions to ~509 tokens (vs the 1024 requested).
+    Fixed in bench_sweep.sh on 2026-04-13; first run with the fix is
+    queued.
+  - |
+    The CUTLASS MoE backend fallback to "auto" may leave some NVFP4 MoE
+    throughput on the table. Worth A/B testing --moe-runner-backend
+    flashinfer_trtllm after we have the baseline.
