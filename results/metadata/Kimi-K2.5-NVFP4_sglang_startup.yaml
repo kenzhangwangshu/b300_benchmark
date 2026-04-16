@@ -1,0 +1,100 @@
+model: nvidia/Kimi-K2.5-NVFP4
+framework: sglang
+container_name: kimi25-sglang
+container_image: lmsysorg/sglang:latest-cu130-runtime
+sglang_version: 0.5.10.post1
+launched_at: 2026-04-14T01:13Z       # CLAUDE.md note: container up ~01:15 UTC
+ready_at: 2026-04-14T01:15Z          # CLAUDE.md note
+cold_start_estimate_sec: 120         # ~2 min — CLAUDE.md claim; not directly observed
+retired_at: 2026-04-14T02:30Z        # container killed at session-end snapshot
+probe_source:
+  - server_info embedded in conc=1 1k1k bench JSON (sglang.bench_serving
+    auto-fetches /get_server_info at run start and stores it in the output JSON)
+  - internal_states.memory_usage breakdown (also from the bench JSON)
+  - No live startup log was captured — this metadata is a reconstruction.
+  - **Created 2026-04-15 after the fact**; the 2026-04-14 session failed to
+    write this file at launch time (procedural gap corrected here).
+
+serving_config:
+  model_path: nvidia/Kimi-K2.5-NVFP4
+  tokenizer_path: nvidia/Kimi-K2.5-NVFP4
+  tensor_parallel_size: 8
+  expert_parallel_size: 1              # NOT enabled — modelopt loader bug (see CLAUDE.md)
+  pipeline_parallel_size: 1
+  data_parallel_size: 1
+  max_model_len: 16384                 # launch flag; server reports context_length=null but max_req_input_len=262138 (full native 256K)
+  max_req_input_len_observed: 262138   # full native Kimi 256K window surfaced despite the cap
+  quantization: modelopt_fp4
+  quant_algo: NVFP4
+  kv_cache_dtype_requested: auto
+  kv_cache_dtype_resolved: fp8_e4m3    # SGLang auto-promoted to FP8 KV on B300 MLA
+  mem_fraction_static: 0.81967         # SGLang default for Kimi MLA path
+  chunked_prefill_size: 16384
+  max_prefill_tokens: 16384
+  page_size: 64
+  trust_remote_code: true
+  tool_call_parser: null               # not set at launch (no agentic eval)
+  reasoning_parser: null               # not set at launch
+  host: 0.0.0.0
+  port: 30000
+  extra_flags:
+    - --trust-remote-code
+    - --quantization modelopt_fp4
+
+runtime_backends:
+  # IMPORTANT: these were picked automatically by SGLang on B300, not set on the command line.
+  attention_backend: trtllm_mla        # Kimi uses MLA (DeepSeek-V3 class)
+  decode_attention_backend: trtllm_mla
+  prefill_attention_backend: trtllm_mla
+  moe_runner_backend: flashinfer_trtllm # SGLang auto-selected on B300 — NOT "auto" as M2.7 metadata suggested. CLAUDE.md note about "CUTLASS disabled / falling back to auto" may be referring to the internal auto-picker that then resolves to flashinfer_trtllm.
+  moe_a2a_backend: none
+  sampling_backend: flashinfer
+  grammar_backend: xgrammar
+  kv_cache_dtype: fp8_e4m3
+  use_mla_backend: true
+
+cuda_graph:
+  enabled: true
+  disable_piecewise_cuda_graph: true   # piecewise disabled — full graph only
+  cuda_graph_max_bs: 512
+  # Full batch-shape schedule: [1..512 in variable steps], 52 shapes total.
+  captured_shapes_count: 52
+
+weight_load:
+  elapsed_sec_per_rank: null           # not captured (no startup log)
+  weight_mem_per_rank_gb: 78.99        # from server_info.internal_states.memory_usage.weight
+  weight_mem_total_gb: 631.92          # 8 ranks combined
+
+kv_cache:
+  max_total_num_tokens: 4235200        # per server_info
+  per_rank:
+    kvcache_total_gb: 138.59           # from memory_usage.kvcache (per rank)
+  aggregate_gb: 1108.72                # 8 ranks combined
+  graph_mem_per_rank_gb: 5.09
+  effective_max_running_requests_per_dp: 4096
+
+probes_recorded_pre_bench:
+  - last_gen_throughput_before_conc1: 177.3 tok/s   # warmup request, per server_info
+
+sweep_scope:
+  profiles_run: ["1k1k"]
+  profiles_skipped: ["1k4k", "4k1k"]
+  skip_reason: |
+    Throughput plateaued at ~2600 t/s by conc=64 (conc=32→64: +4.3%,
+    conc=64→128: +0.6%). Sweep was stopped at conc=128 to save time;
+    the curve is complete to its knee. 1k4k / 4k1k not yet run — pending
+    a separate session.
+
+known_issues:
+  - |
+    Kimi tokenizer falls through to the HF super().encode() slow path
+    whenever SGLang passes add_special_tokens=False (which it does on
+    every chat-template encoding). Inflates TTFT by ~10-30%. Visible
+    in bench logs as repeated "Calling super().encode with
+    {'add_special_tokens': False}" lines. Not patched. Full trace in
+    configs/kimi-k2.5.yaml.
+  - |
+    Kimi launched without --tool-call-parser and --reasoning-parser —
+    consistent for random-input sweeps but inconsistent with GLM-5.1 /
+    M2.7 launches that do pass them. Re-run with matching parsers if
+    we ever do agentic evals.

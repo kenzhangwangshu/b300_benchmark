@@ -1,0 +1,132 @@
+model:
+  name: Qwen3.5-397B-A17B
+  hf_id: nvidia/Qwen3.5-397B-A17B-NVFP4
+  architecture: Hybrid linear + full attention MoE (multimodal-capable)
+  architectures_field: Qwen3_5MoeForConditionalGeneration
+  model_type: qwen3_5_moe
+  total_params: 397B              # per model name
+  active_params: 17B              # "A17B" in model name
+  num_hidden_layers: 60
+  layer_types: "45 linear_attention + 15 full_attention (every 4th layer is full; Mamba-style hybrid)"
+  full_attention_interval: 4
+  num_experts: 512
+  num_experts_per_tok: 10
+  moe_intermediate_size: 1024
+  num_attention_heads: 32
+  num_key_value_heads: 2          # aggressive GQA (ratio 16:1)
+  head_dim: 256
+  hidden_size: 4096
+  attn_output_gate: true
+  vocab_size: 248320
+  max_position_embeddings: 262144 # 256K native context
+  multimodal: true                # image_token_id=248056; video_preprocessor present
+  dtype: bfloat16
+  license: unknown                # check model card
+
+serving:
+  framework: sglang
+  container: lmsysorg/sglang:latest-cu130-runtime
+  sglang_version: 0.5.10.post1
+  port: 30000
+  tp: 8
+  ep: 1                           # EP+NVFP4 broken on SGLang modelopt loader
+  context_length: 16384           # benchmark cap
+  quantization: modelopt_fp4
+  moe_runner_backend: flashinfer_trtllm  # explicit
+  kv_cache_dtype: auto            # let SGLang pick — not MLA so auto path is simpler
+  attention_backend: auto         # hybrid linear+full; not forcing trtllm_mla
+  disable_radix_cache: true
+  trust_remote_code: true
+  env:
+    VLLM_USE_FLASHINFER_MOE_FP4: "1"
+    TORCHINDUCTOR_COMPILE_THREADS: "1"   # preventative (carried over from R1 fix)
+  extra_flags:
+    - --trust-remote-code
+    - --quantization modelopt_fp4
+    - --moe-runner-backend flashinfer_trtllm
+    - --disable-radix-cache
+    - --context-length 16384
+  parser_notes: |
+    NO --reasoning-parser, NO --tool-call-parser per benchmark rule.
+
+storage:
+  hf_cache_path: ~/.cache/huggingface/hub/models--nvidia--Qwen3.5-397B-A17B-NVFP4
+  size_on_disk: 234 GB
+  shards: 11
+
+benchmark:
+  seq_lens: [1k1k, 1k4k, 4k1k]    # 1k1k complete; 1k4k and 4k1k deferred (new-node wrap)
+  concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+
+# ---------- Architecture notes and risks ----------
+
+architecture_risks:
+  new_model_type: |
+    qwen3_5_moe is a new SGLang model type. Initial launch 2026-04-15 22:54
+    passed argparse and started weight load without "model not supported"
+    errors — confirms SGLang 0.5.10.post1 includes this architecture.
+  hybrid_attention: |
+    60 layers = 45 linear_attention + 15 full_attention (every 4th layer).
+    SGLang uses linear_attn_backend=triton for the linear layers and
+    auto-picks trtllm_mha (not MLA) for full attention, observed at
+    startup via: "TensorRT-LLM MHA only supports page_size of 16, 32
+    or 64, changing page_size from None to 64."
+  multimodal_class: |
+    Architecture is Qwen3_5MoeForConditionalGeneration (multimodal), but
+    the bench tool sends text-only chat requests. SGLang initializes the
+    vision components but they stay idle. Memory overhead for unused
+    vision weights is minimal.
+  large_vocab: |
+    248320 vocab, sharded TP=8 → 31040 per rank. Large enough that
+    get_masked_input_and_mask may hit the same inductor compile path as
+    R1. TORCHINDUCTOR_COMPILE_THREADS=1 is set preventatively.
+
+results:
+  "1k1k":
+    status: complete
+    framework: sglang
+    container: qwen35-397b (lmsysorg/sglang:latest-cu130-runtime)
+    sglang_version: 0.5.10.post1
+    completed_concurrencies: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+    json_dir: ~/benchmark/results/sglang/qwen3.5-397b-a17b/json/
+    note: |
+      Sweep interrupted at conc=256 by server reboot 2026-04-15 23:26
+      (graceful SIGTERM during decode of conc=256, no JSON written).
+      Resumed 2026-04-15 23:41 against the same container image and
+      flags; conc=256 re-ran from scratch, conc=512 then fired.
+    headline:
+      conc_1:   { out_tps:   194.2, mean_tpot_ms:  4.96, mean_ttft_ms:  197 }
+      conc_16:  { out_tps:  2119.3, mean_tpot_ms:  7.03, mean_ttft_ms:  536 }
+      conc_64:  { out_tps:  5189.6, mean_tpot_ms: 11.31, mean_ttft_ms: 1045 }
+      conc_128: { out_tps:  7867.3, mean_tpot_ms: 14.84, mean_ttft_ms: 1451 }
+      conc_256: { out_tps: 10652.2, mean_tpot_ms: 21.02, mean_ttft_ms: 3032 }
+      conc_512: { out_tps: 10258.2, mean_tpot_ms: 45.06, mean_ttft_ms: 4840 }
+    peak: { tps: 10652.2, at_concurrency: 256 }
+    gain_trajectory: |
+      +92% (1→2), +85% (2→4), +78% (4→8), +72% (8→16), +56% (16→32),
+      +57% (32→64), +52% (64→128), +35% (128→256), -3.7% (256→512).
+      Qwen is the ONLY model in the queue that peaks before conc=512 —
+      the plateau guard (10% threshold) fired at conc=512 with a -3.7%
+      regression vs conc=256, stopping the sweep cleanly.
+    architectural_signature: |
+      Only 17B active params (out of 397B total) gives Qwen the best
+      conc=1 throughput (194 t/s) and the lowest TPOT (5.0 ms) in the
+      queue. Aggressive GQA (32 query heads : 2 KV heads) helps decode
+      memory bandwidth. The hybrid 45-linear + 15-full attention scheme
+      saturates memory bandwidth earlier than dense-full-attention peers
+      (M2.7, R1, GLM-5.1), which is the likely mechanism behind the
+      conc=256 peak. New `qwen3_5_moe` model type in SGLang — architecture
+      worked first-try, no loader bugs, no inductor workarounds required
+      (though TORCHINDUCTOR_COMPILE_THREADS=1 was set preventatively).
+    vs_other_models:
+      m27:     "Qwen +3.6% peak throughput (10652 vs 10284) at HALF the concurrency; +84% at conc=1 (194 vs 105); +30% at conc=256"
+      r1:      "Qwen +7.7% peak (10652 vs 9891); roughly tied at conc=512 (9891 vs 10258); +17% at conc=1"
+      glm_5_1: "Qwen +19% peak (10652 vs 8913); +74% at conc=128 (7867 vs 4520)"
+      kimi:    "Qwen +310% at conc=128 where Kimi plateaued (7867 vs 2595)"
+
+  "1k4k":
+    status: not_yet_run
+    note: "Deferred at session-end 2026-04-16 (node wrap-up for driver upgrade)."
+  "4k1k":
+    status: not_yet_run
+    note: "Deferred at session-end 2026-04-16 (node wrap-up for driver upgrade)."

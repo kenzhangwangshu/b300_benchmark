@@ -61,7 +61,7 @@ case "$FRAMEWORK" in
   *) echo "Unknown framework: $FRAMEWORK (expected sglang|vllm)"; exit 1 ;;
 esac
 
-CID=$(sudo docker ps -q | head -1)
+CID=$(docker ps -q | head -1)
 if [ -z "$CID" ]; then
   echo "ERROR: no running container. Launch the server first." >&2
   exit 2
@@ -87,6 +87,14 @@ echo "Sweep: framework=$FRAMEWORK model=$MODEL precision=$PRECISION seq=$SEQ mod
 echo "Server at $BASE_URL (container $CID)"
 echo "  json -> $JSON_DIR"
 echo "  logs -> $LOG_DIR"
+
+# Plateau threshold: if output_throughput gain vs. previous level drops below
+# this fraction, stop the sweep. 0.10 = 10% — matches the observed Kimi 1k1k
+# knee (conc=64→128 was +0.6%, clearly plateaued; conc=32→64 was +4.3%, also
+# effectively plateaued). Tweak by exporting PLATEAU_THRESHOLD before calling.
+PLATEAU_THRESHOLD="${PLATEAU_THRESHOLD:-0.10}"
+
+PREV_TPS=""   # output_throughput from previous concurrency level (blank on first)
 
 for CONC in 1 2 4 8 16 32 64 128 256 512; do
   PROMPTS=$((CONC > 4 ? CONC * 10 : 40))
@@ -115,7 +123,7 @@ for CONC in 1 2 4 8 16 32 64 128 256 512; do
     # ignore_eos is already set to True by default inside sglang.bench_serving
     # (disable_ignore_eos=False → payload["ignore_eos"] = not False = True),
     # so no --extra-request-body is needed here.
-    sudo docker exec -i "$CID" \
+    docker exec -i "$CID" \
       python3 -m sglang.bench_serving \
       --backend sglang-oai-chat \
       --base-url "$BASE_URL" \
@@ -131,7 +139,7 @@ for CONC in 1 2 4 8 16 32 64 128 256 512; do
       2>&1 | tee "$LOG"
   else
     # vLLM bench tool — lives in the vLLM container.
-    sudo docker exec -i "$CID" \
+    docker exec -i "$CID" \
       vllm bench serve \
       --backend openai-chat \
       --base-url "$BASE_URL" \
@@ -169,4 +177,46 @@ for CONC in 1 2 4 8 16 32 64 128 256 512; do
     echo "!!! no JSON result produced at conc=$CONC — stopping sweep"
     break
   fi
+
+  # Guard 4: plateau detection. Parse output_throughput (top-level float, same
+  # key for sglang.bench_serving and vllm bench serve) and compare to the
+  # previous level. Stop if the relative gain is below PLATEAU_THRESHOLD.
+  # This is the mechanism that avoids wasting time at conc=256/512 when the
+  # throughput curve has already flattened (see Kimi K2.5 1k1k — plateaued by
+  # conc=64, stopped at conc=128 manually in the 2026-04-14 session).
+  CUR_TPS=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('$JSON'))
+    v = d.get('output_throughput')
+    print(v if v is not None else '')
+except Exception as e:
+    sys.stderr.write(f'parse failed: {e}\n')
+    print('')
+" 2>/dev/null)
+
+  if [ -z "$CUR_TPS" ]; then
+    echo "!!! could not parse output_throughput from $JSON — stopping sweep"
+    break
+  fi
+
+  if [ -n "$PREV_TPS" ]; then
+    # Use python for the float math — bash doesn't handle floats natively.
+    read -r GAIN_PCT STOP < <(python3 -c "
+prev = float('$PREV_TPS')
+cur  = float('$CUR_TPS')
+thr  = float('$PLATEAU_THRESHOLD')
+gain = (cur - prev) / prev if prev > 0 else 0.0
+stop = 1 if gain < thr else 0
+print(f'{gain*100:.2f} {stop}')
+")
+    echo "+++ conc=$CONC output_throughput=${CUR_TPS} tok/s (gain vs prev ${GAIN_PCT}%)"
+    if [ "$STOP" = "1" ]; then
+      echo "!!! plateau detected at conc=$CONC (gain ${GAIN_PCT}% < $(python3 -c "print(float('$PLATEAU_THRESHOLD')*100)")%) — stopping sweep"
+      break
+    fi
+  else
+    echo "+++ conc=$CONC output_throughput=${CUR_TPS} tok/s (baseline)"
+  fi
+  PREV_TPS="$CUR_TPS"
 done

@@ -6,7 +6,27 @@ model:
   total_params: 230B
   active_params: 10B
   experts: 256
+  hidden_size: 3072
+  intermediate_size: 1536        # binding axis for FP8 block alignment
+  num_hidden_layers: 62
   license: modified-mit (non-commercial)
+
+constraints:
+  fp8_tp_ceiling: 4              # see docs/quantization_block_alignment.md
+  fp8_tp_ceiling_reason: |
+    M2.7 MoE intermediate_size = 1536. Block-FP8 uses block_n=128.
+    At TP=8 the per-rank output size is 1536/8 = 192, not divisible
+    by 128, so both vLLM 0.13.0 and SGLang 0.5.10.post1 refuse to
+    load the FP8 checkpoint. Maximum valid FP8 TP is 4 (1536/4 = 384,
+    divisible by 128). NVIDIA's M2.7 FP8 blog post recommends TP=4
+    as the production configuration. For 8-GPU nodes, run two
+    instances at TP=4 (see minimax-m2.7-fp8-dual.yaml).
+  nvfp4_tp_ceiling: 16           # NVFP4 uses 16-element groups; 1536 is 16-aligned up through TP=96
+  nvfp4_tp_ceiling_reason: |
+    NVFP4 block size is 16 elements. At TP=8 each rank has 192
+    elements (= 12 NVFP4 groups). NVFP4 divides much more finely
+    than FP8, so alignment is trivial for this model.
+  see_also: docs/quantization_block_alignment.md
 
 serving:
   framework: sglang

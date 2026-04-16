@@ -1,0 +1,209 @@
+model: nvidia/DeepSeek-R1-NVFP4
+framework: sglang
+container_name: deepseek-r1
+container_image: lmsysorg/sglang:latest-cu130-runtime
+sglang_version: 0.5.10.post1
+launched_at: 2026-04-15T21:55:35Z    # after first launch crashed at cuda graph capture
+ready_at: 2026-04-15T22:02:41Z       # docker logs "fired up and ready to roll"
+cold_start_sec: 426                  # ~7 min 6 s (second successful launch)
+probe_source:
+  - docker logs deepseek-r1 (live SGLang startup log)
+  - /get_server_info polled at 22:10Z during conc=1 sweep
+  - captured fresh during active benchmark session 2026-04-15
+
+model_class: DeepseekV3ForCausalLM
+architecture_notes: |
+  DeepSeek V3 / R1 class with multi-head latent attention (MLA).
+  Shares the kernel path with Kimi K2.5 (also DeepseekV3ForCausalLM).
+  61 layers, hidden=7168, 128 heads, kv_lora_rank=512, q_lora_rank=1536,
+  256 routed experts + 1 shared, 8 experts/token, moe_intermediate=2048.
+  Custom modeling code (auto_map → modeling_deepseek.DeepseekV3Model) —
+  --trust-remote-code is required.
+
+# ---------- Launch bring-up required a torch.inductor workaround ----------
+bringup_problem:
+  first_attempt_failure:
+    when: 2026-04-15 21:47-21:52
+    phase: cuda graph capture
+    error: |
+      Capture cuda graph failed: SubprocException: An exception occurred
+      in a subprocess: triton_poi_fused_add_bitwise_and_bitwise_or_ge_lt_mul_sub_0
+      → triton_helpers.set_driver_to_gpu() →
+      RuntimeError: Could not find an active GPU backend
+    trace_site: |
+      sglang/srt/model_executor/cuda_graph_runner.py:1024 →
+      deepseek_v2.py:2251 → deepseek_v2.py:1985 →
+      vocab_parallel_embedding.py:474 get_masked_input_and_mask
+    root_cause: |
+      torch.inductor compile worker pool spawns subprocess workers with
+      --kind=fork --workers=32 to compile Triton kernels in parallel.
+      In a fork'd subprocess, CUDA state is NOT inherited cleanly —
+      Triton's set_driver_to_gpu() then fails to detect the GPU backend.
+      The affected kernel path is the dynamo-decorated
+      get_masked_input_and_mask in vocab_parallel_embedding.py, which
+      compiles on demand during the first CUDA graph capture regardless
+      of --enable-torch-compile=False. Kimi K2.5 (same DeepseekV3 class)
+      and GLM-5.1 didn't hit this because kernel compile ordering is
+      non-deterministic — they happened to compile a different set first.
+  fix:
+    env: TORCHINDUCTOR_COMPILE_THREADS=1
+    mechanism: |
+      Forces torch.inductor to compile kernels in-process on a single
+      thread instead of spawning subprocess worker pools. Eliminates
+      the fork'd-subprocess GPU-backend problem entirely.
+    relaunch_result: clean — weight load 55-59 s/rank, CUDA graph
+      capture 31 s/rank (52 shapes), ready at 22:02:41Z.
+  second_attempt_success:
+    startup_log_site: ~/benchmark/results/sglang/deepseek-r1/logs/server_startup.log
+    verification: docker inspect deepseek-r1 env contains TORCHINDUCTOR_COMPILE_THREADS=1
+
+serving_config:
+  model_path: nvidia/DeepSeek-R1-NVFP4
+  tokenizer_path: nvidia/DeepSeek-R1-NVFP4
+  tensor_parallel_size: 8
+  expert_parallel_size: 1
+  pipeline_parallel_size: 1
+  data_parallel_size: 1
+  context_length: 16384                # --context-length flag
+  max_req_input_len_observed: 16378    # SGLang subtracts internal tokens
+  quantization: modelopt_fp4
+  quant_algo: NVFP4
+  kv_cache_dtype_requested: fp8_e4m3   # EXPLICIT in our script
+  kv_cache_dtype_resolved: fp8_e4m3
+  mem_fraction_static: 0.896           # SGLang default for this config
+  chunked_prefill_size: 16384
+  max_prefill_tokens: 16384
+  page_size: 64
+  trust_remote_code: true
+  disable_radix_cache: true            # per verda guide (random dataset has no prefix overlap)
+  disable_piecewise_cuda_graph: true   # SGLang default on B300 MLA
+  disable_shared_experts_fusion: true  # SGLang default
+  tool_call_parser: null               # benchmark rule: no parsers
+  reasoning_parser: null               # benchmark rule: no parsers
+  host: 0.0.0.0
+  port: 30000
+  env_vars:
+    VLLM_USE_FLASHINFER_MOE_FP4: "1"          # vLLM env per user template; harmless to SGLang
+    TORCHINDUCTOR_COMPILE_THREADS: "1"        # CRITICAL workaround — see bringup_problem above
+  extra_flags:
+    - --trust-remote-code
+    - --quantization modelopt_fp4
+    - --kv-cache-dtype fp8_e4m3
+    - --attention-backend trtllm_mla
+    - --moe-runner-backend flashinfer_trtllm
+    - --disable-radix-cache
+    - --context-length 16384
+
+runtime_backends:
+  # All resolved values match the explicit flags we passed — no auto-promotion needed.
+  attention_backend: trtllm_mla
+  decode_attention_backend: null        # inherits from attention_backend
+  prefill_attention_backend: null       # inherits from attention_backend
+  moe_runner_backend: flashinfer_trtllm
+  moe_a2a_backend: none
+  sampling_backend: flashinfer
+  grammar_backend: xgrammar
+  kv_cache_dtype: fp8_e4m3
+  use_mla_backend: true
+  enable_flashinfer_allreduce_fusion: true
+
+cuda_graph:
+  enabled: true
+  disable_piecewise_cuda_graph: true
+  cuda_graph_max_bs: 512
+  capture_started_at: "2026-04-15T22:01:38Z"
+  capture_ended_at:   "2026-04-15T22:02:09Z"
+  capture_elapsed_sec: 31.2             # avg across TP0..TP7 — 3x faster than GLM's 92s
+  captured_shapes_count: 52
+  avail_mem_after_capture_gb_per_rank: 20.98-22.03
+
+weight_load:
+  started_at: "2026-04-15T21:57:49Z"
+  ended_at:   "2026-04-15T21:58:49Z"
+  elapsed_sec_per_rank: 54.49-58.79     # fastest of any model measured so far
+  weight_mem_per_rank_gb: 53.12         # from "Load weight end" and server_info.memory_usage.weight
+  weight_mem_total_gb: 424.96           # 8 ranks
+  avail_mem_per_rank_before_load_gb: 265.50
+  avail_mem_per_rank_after_load_gb: 212.38
+  comparison:
+    glm_5_1_load_sec_per_rank: 173.60-174.42
+    glm_5_1_weight_gb_per_rank: 61.13
+    r1_is_faster_because: |
+      R1 is a canonical DeepSeek V3 class model, same architecture as
+      Kimi K2.5 — the modelopt FP4 loader path is well-traveled. GLM's
+      GlmMoeDsaForCausalLM class has slower weight processing (NSA
+      setup + DSA-specific fusion logic).
+
+kv_cache:
+  max_total_num_tokens: 5646272         # per server_info and "KV Cache is allocated" log
+  per_rank:
+    kv_size_gb: 184.76                  # from "KV Cache is allocated" and memory_usage.kvcache
+  aggregate_gb: 1478.08                 # 8 ranks
+  effective_max_running_requests_per_dp: 4096
+  note: |
+    R1's KV pool is 63% LARGER than GLM-5.1's (3,462,464 tokens → 5,646,272
+    tokens) despite using only slightly more per-rank memory (184.76 vs
+    178.08 GB). MLA compresses KV to kv_lora_rank=512 which is why the
+    token capacity is so high per byte.
+
+memory_breakdown_per_rank_gb:
+  weight: 53.12
+  kvcache: 184.76
+  graph: 4.38
+  other_and_free: ~20
+  total: ~262 / ~288 HBM on B300 SXM6
+
+startup_timeline:
+  "21:55:35": container docker run
+  "21:56:53": server_args parsed
+  "21:57:02": Init torch distributed begin
+  "21:57:45": Init torch distributed ends (38-43 s per rank)
+  "21:57:49": Load weight begin (avail 265 GB per rank)
+  "21:58:49": Load weight end (54-59 s per rank, 53.12 GB weight mem)
+  "21:58:49": KV Cache allocated (5646272 tokens, 184.76 GB per rank)
+  "22:01:38": CUDA graph capture begin (2 min 49 s gap — flashinfer/trtllm JIT warmup)
+  "22:02:09": CUDA graph capture end (31 s, 52 shapes)
+  "22:02:41": Server ready ("fired up")
+
+probes_recorded_pre_bench:
+  - warmup_curl_returned_200: true
+  - warmup_response_model_id: nvidia/DeepSeek-R1-NVFP4
+  - warmup_prompt_tokens: 11
+  - warmup_completion_tokens: 208
+  - warmup_reasoning_tokens: 0          # no parser → reasoning streams as visible content
+  - warmup_visible_content_prefix: "Okay, the user wants me to say..." (raw reasoning chain)
+
+sweep_scope:
+  profiles_run: ["1k1k (in progress)"]
+  profiles_queued: ["1k4k", "4k1k"]
+  planned_concurrencies: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+  plateau_guard: 0.10                   # bench_sweep.sh will stop early if gain < 10%
+
+reference_numbers_to_beat:
+  # See configs/deepseek-r1.yaml for full citations.
+  vllm_gb300_blog_2026_02_13:
+    hardware: 2x B300
+    checkpoint: nvidia/DeepSeek-R1-0528-NVFP4   # different checkpoint than ours
+    peak_prefill_TGS: 22476                      # EP2, batch=64, ISL=2048 OSL=1
+    peak_mixed_TGS: 3072                         # TP2, ISL=2048 OSL=1024
+  verda_sglang_guide_2026:
+    hardware: 4x B300
+    checkpoint: DeepSeek-R1-0528-NVFP4-v2
+    single_batch: batch=16 ISL=OSL=1024 → latency 12.55 s, input 50308 tps, output 1340 tps
+
+known_issues:
+  - |
+    TORCHINDUCTOR_COMPILE_THREADS=1 is MANDATORY on this container for R1
+    (and likely any DeepSeek V3 class model that happens to hit the
+    vocab_parallel_embedding dynamo-decorated path first). Do not drop
+    this env var. If a future SGLang release fixes the compile-worker
+    CUDA init, revisit. See bringup_problem block above.
+  - |
+    Container launched without HF_TOKEN — "unauthenticated requests"
+    warnings at startup. Safe to ignore on this model since weights
+    are already cached locally.
+  - |
+    2 min 49 s gap between KV cache allocation and CUDA graph capture.
+    No logging in that window from our grep'd lines — most likely
+    flashinfer_trtllm JIT warmup + internal NSA backend prep. Shorter
+    than GLM-5.1's equivalent gap.

@@ -1,0 +1,167 @@
+model:
+  name: DeepSeek-R1
+  hf_id: nvidia/DeepSeek-R1-NVFP4
+  architecture: MoE (DeepSeek V3 / R1 class, multi-head latent attention)
+  architectures_field: DeepseekV3ForCausalLM
+  total_params: 671B              # per user brief
+  active_params: 37B              # per user brief
+  experts: 256                    # config.json: n_routed_experts=256 + 1 shared
+  experts_per_token: 8            # config.json: num_experts_per_tok=8
+  hidden_size: 7168
+  intermediate_size: 18432        # dense layers (first_k_dense_replace=3)
+  moe_intermediate_size: 2048
+  num_hidden_layers: 61
+  num_attention_heads: 128
+  kv_lora_rank: 512               # MLA compressed KV — very compact
+  q_lora_rank: 1536
+  max_position_embeddings: 163840 # YaRN scaled to 128K context
+  license: MIT
+  custom_modules:
+    - configuration_deepseek.py
+    - modeling_deepseek.py
+  trust_remote_code_required: true   # auto_map in config.json points to custom code
+
+serving:
+  framework: sglang
+  container: lmsysorg/sglang:latest-cu130-runtime
+  sglang_version: 0.5.10.post1
+  port: 30000
+  tp: 8
+  ep: 1                            # EP+NVFP4 broken on SGLang modelopt loader (see CLAUDE.md)
+  ep_runtime_verified: false_inferred_from_m27
+  context_length: 16384            # --context-length flag (SGLang spelling; vLLM uses --max-model-len)
+  kv_cache_dtype: fp8_e4m3         # explicit; also what SGLang auto-promotes on DeepSeek V3 MLA
+  attention_backend: trtllm_mla    # explicit; matches Kimi's auto-select and verda guide
+  moe_runner_backend: flashinfer_trtllm  # explicit; matches Kimi/GLM auto-select
+  disable_radix_cache: true        # per verda guide; random dataset has no prefix overlap
+  quantization: modelopt_fp4
+  trust_remote_code: true
+  env:
+    VLLM_USE_FLASHINFER_MOE_FP4: "1"   # vLLM env var per user template; harmless to SGLang
+  extra_flags:
+    - --trust-remote-code
+    - --quantization modelopt_fp4
+    - --kv-cache-dtype fp8_e4m3
+    - --attention-backend trtllm_mla
+    - --moe-runner-backend flashinfer_trtllm
+    - --disable-radix-cache
+    - --context-length 16384
+  parser_notes: |
+    NO --reasoning-parser, NO --tool-call-parser per project benchmark
+    rule (CLAUDE.md). R1 is a reasoning model — parsers would buffer
+    <think>...</think> content and inflate TTFT (same issue we hit
+    on GLM-5.1 with glm45 parser: 3895 ms → 197 ms after removing).
+
+storage:
+  hf_cache_path: ~/.cache/huggingface/hub/models--nvidia--DeepSeek-R1-NVFP4
+  size_on_disk: 395 GB
+  shards: 80
+
+benchmark:
+  seq_lens: [1k1k]                  # starting with 1k1k per priority change; 1k4k/4k1k later
+  concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+
+# ---------- Reference numbers from published sources ----------
+
+reference_numbers:
+  vllm_gb300_blog_2026_02_13:
+    url: https://vllm.ai/blog/gb300-deepseek
+    hardware: 2x B300 (minimal config, NOT full node)
+    env: VLLM_USE_FLASHINFER_MOE_FP4=1
+    checkpoint: nvidia/DeepSeek-R1-0528-NVFP4  # DIFFERENT checkpoint than ours
+    best_prefill:
+      config: "vllm serve ... -dp 2 --enable-expert-parallel --max-num-batched-tokens 32768"
+      strategy: EP2 (prefill-heavy)
+      isl: 2048
+      osl: 1
+      batch: 64
+      throughput: 22476 tok/s_per_gpu    # "TGS" in blog = tokens/GPU/s
+      note: peak prefill throughput
+    best_mixed:
+      config: "vllm serve ... -tp 2 --max-num-batched-tokens 32768"
+      strategy: TP2 (mixed workload)
+      isl: 2048
+      osl: 1024
+      throughput: 3072 tok/s_per_gpu
+      note: output tok/s/gpu, mixed context
+    comparison_caveat: |
+      vLLM numbers are PER-GPU on 2 GPUs. To compare to our 8-GPU sweep,
+      multiply: prefill ceiling ~22476 × 2 ≈ 45K aggregate on 2x B300.
+      Our 8x B300 should theoretically scale higher. Also different
+      checkpoint (R1-0528-NVFP4 vs R1-NVFP4 base) so numbers are not
+      strictly apples-to-apples.
+
+  verda_sglang_guide_2026:
+    url: https://verda.com/blog/deploy-deepseek-r1-with-sglang-and-terraform
+    hardware: 4x B300
+    image: lmsysorg/sglang:dev-cu13
+    checkpoint: DeepSeek-R1-0528-NVFP4-v2/snapshots/25a138f28f49022958b9f2d205f9b7de0cdb6e18
+    flags:
+      - --tp 4
+      - --attention-backend trtllm_mla
+      - --disable-radix-cache
+      - --moe-runner-backend flashinfer_trtllm
+      - --quantization modelopt_fp4
+      - --kv-cache-dtype fp8_e4m3
+    single_batch_result:
+      batch_size: 16
+      isl: 1024
+      osl: 1024
+      latency_sec: 12.55
+      input_throughput_tps: 50308
+      output_throughput_tps: 1340
+      note: single-batch test, NOT a concurrency sweep — not directly comparable
+
+  nvidia_hf_card:
+    url: https://huggingface.co/nvidia/DeepSeek-R1-NVFP4
+    declared_runtime: TensorRT-LLM (primary/only)
+    min_hardware: 8x B200
+    recommended_tp: 8
+    recommended_attention_dp: true   # enable_attention_dp=True in TRT-LLM LLM API
+    note: |
+      NVIDIA card lists TRT-LLM as the only supported runtime but community
+      (verda, vLLM blog) runs it on SGLang and vLLM without issues.
+
+results:
+  "1k1k":
+    status: complete
+    framework: sglang
+    container: deepseek-r1 (lmsysorg/sglang:latest-cu130-runtime)
+    sglang_version: 0.5.10.post1
+    completed_concurrencies: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+    json_dir: ~/benchmark/results/sglang/deepseek-r1/json/
+    headline:
+      conc_1:   { out_tps:  166.11, mean_tpot_ms:  5.87, mean_ttft_ms:  156.8, mean_e2e_ms:  6164.0 }
+      conc_4:   { out_tps:  550.79, mean_tpot_ms:  6.90, mean_ttft_ms:  380.9, mean_e2e_ms:  7434.7 }
+      conc_16:  { out_tps: 1595.85, mean_tpot_ms:  9.61, mean_ttft_ms:  435.6, mean_e2e_ms: 10262.9 }
+      conc_64:  { out_tps: 3947.15, mean_tpot_ms: 15.27, mean_ttft_ms:  968.1, mean_e2e_ms: 16588.7 }
+      conc_128: { out_tps: 6163.21, mean_tpot_ms: 19.25, mean_ttft_ms: 1545.1, mean_e2e_ms: 21240.9 }
+      conc_256: { out_tps: 8644.29, mean_tpot_ms: 26.96, mean_ttft_ms: 2644.1, mean_e2e_ms: 30222.2 }
+      conc_512: { out_tps: 9891.43, mean_tpot_ms: 46.84, mean_ttft_ms: 4990.4, mean_e2e_ms: 52909.4 }
+    gain_trajectory: |
+      +88.9% (1→2), +75.6% (2→4), +77.1% (4→8), +63.6% (8→16), +56.1% (16→32),
+      +58.5% (32→64), +56.1% (64→128), +40.3% (128→256), +14.4% (256→512).
+      Curve is still climbing at conc=512 but gain is trending down. Extrapolating
+      suggests conc=1024 would be marginal (<10%) and would hit the plateau guard.
+    sweet_spot: |
+      conc=1 to 64 for interactive (TPOT under 16 ms, TTFT under 1 s).
+      conc=128 to 256 for balanced batch (TPOT 19-27 ms, TTFT 1.5-2.6 s).
+      conc=512 is peak-throughput regime at the cost of multi-second TTFT.
+    architectural_signature: |
+      R1 scales cleanly across the full conc=1..512 range, beating Kimi K2.5
+      (same DeepSeekV3 class) at every level and blowing past Kimi's
+      conc=64 plateau (Kimi peaked ~2600 t/s; R1 at conc=128 is 6163 t/s,
+      2.4x Kimi's ceiling). Likely because R1 is smaller per-rank (53 GB
+      weight vs Kimi's 79 GB), has a larger KV pool (5.65M tokens vs
+      Kimi's 4.24M), and was launched with explicit flashinfer_trtllm
+      moe backend + fp8_e4m3 kv from the start rather than relying on
+      SGLang auto-selection.
+    vs_other_models:
+      m27:     "R1 matches M2.7 throughput (9891 vs 10284, -4%) despite being 3x larger in total params, but R1's TPOT is much better: 47 vs 46 ms at conc=512 (tie) and 19 vs 26 ms at conc=128 (+37% advantage)"
+      glm_5_1: "R1 +11% at conc=512 (9891 vs 8913), +36% at conc=128 (6163 vs 4520)"
+      kimi:    "R1 +283% at conc=64 (3947 vs Kimi's 2579 peak); Kimi never reached conc=128+"
+
+  "1k4k":
+    status: not_yet_run
+  "4k1k":
+    status: not_yet_run

@@ -1,0 +1,126 @@
+model: lukealonso/GLM-5.1-NVFP4
+framework: sglang
+container_name: glm51
+container_image: lmsysorg/sglang:latest-cu130-runtime
+sglang_version: 0.5.10.post1
+launched_at: 2026-04-15T19:08:49Z    # docker logs, first server_args line
+ready_at: 2026-04-15T19:16:58Z       # docker logs, "server is fired up"
+cold_start_sec: 489                  # 8 min 9 s — longest of any model so far
+probe_source:
+  - docker logs glm51 (live SGLang startup log)
+  - /get_server_info polled at 19:17:30Z after warmup
+  - captured during active benchmark session
+
+model_class: GlmMoeDsaForCausalLM    # GLM-5.1 is a Dynamic Sparse Attention MoE variant
+architecture_notes: |
+  GLM-5.1's kernel class is GlmMoeDsaForCausalLM ("Moe + DSA"). The
+  attention backend resolves to NSA (Native Sparse Attention) with
+  trtllm prefill and decode backends. On Blackwell, SGLang forces NSA
+  prefill to use sparse MLA (MHA_ONE_SHOT disabled) — this is a required
+  correctness path, not a tuning choice. Startup log line:
+    "Force NSA prefill to use sparse MLA (i.e. disable MHA_ONE_SHOT)
+     for GlmMoeDsaForCausalLM on Blackwell."
+
+serving_config:
+  model_path: lukealonso/GLM-5.1-NVFP4
+  tokenizer_path: lukealonso/GLM-5.1-NVFP4
+  tensor_parallel_size: 8
+  expert_parallel_size: 1              # NOT enabled — modelopt loader bug (CLAUDE.md)
+  pipeline_parallel_size: 1
+  data_parallel_size: 1
+  max_model_len: 16384                 # launch flag; server reports context_len=202752 as native model capacity
+  quantization: modelopt_fp4
+  quant_algo: NVFP4
+  kv_cache_dtype_requested: auto
+  kv_cache_dtype_resolved: fp8_e4m3    # auto-promoted — this is a GLM-5.1 default on SGLang Blackwell path
+  mem_fraction_static: 0.901           # higher than Kimi's 0.82 (more static memory reserved)
+  chunked_prefill_size: 16384
+  max_prefill_tokens: 16384
+  page_size: 64
+  trust_remote_code: true
+  tool_call_parser: glm47              # standard GLM-family tool parser
+  reasoning_parser: glm45              # standard GLM-family reasoning parser
+  disable_shared_experts_fusion: true  # SGLang default for GLM MoE
+  disable_piecewise_cuda_graph: true   # piecewise graph disabled
+  host: 0.0.0.0
+  port: 30000
+  extra_flags:
+    - --trust-remote-code
+    - --quantization modelopt_fp4
+    - --tool-call-parser glm47
+    - --reasoning-parser glm45
+
+runtime_backends:
+  attention_backend: nsa                # Native Sparse Attention
+  nsa_prefill_backend: trtllm
+  nsa_decode_backend: trtllm
+  moe_runner_backend: flashinfer_trtllm # auto-selected on B300
+  moe_a2a_backend: none
+  sampling_backend: flashinfer
+  grammar_backend: xgrammar
+  kv_cache_dtype: fp8_e4m3
+  enable_flashinfer_allreduce_fusion: true
+
+cuda_graph:
+  enabled: true
+  disable_piecewise_cuda_graph: true
+  cuda_graph_max_bs: 512
+  capture_started_at: "2026-04-15T19:15:04Z"
+  capture_ended_at:   "2026-04-15T19:16:36Z"
+  capture_elapsed_sec: 92.15           # avg across TP0..TP7
+  captured_shapes_count: 52
+  avail_mem_after_capture_gb_per_rank: 18.65-19.28
+
+weight_load:
+  started_at: "2026-04-15T19:09:51Z"
+  ended_at:   "2026-04-15T19:12:46Z"
+  elapsed_sec_per_rank: 173.60-174.42  # observed across TP0..TP7
+  weight_mem_per_rank_gb: 61.13        # from "mem usage=61.13 GB" in Load weight end logs
+  weight_mem_total_gb: 489.04          # 8 ranks
+  avail_mem_per_rank_before_load_gb: 265.50
+  avail_mem_per_rank_after_load_gb: 204.37
+
+kv_cache:
+  max_total_num_tokens: 3462464        # from TP0 "KV Cache is allocated" line
+  per_rank:
+    kv_size_gb: 178.08                 # startup log
+  aggregate_gb: 1424.64                # 8 ranks
+  max_running_requests: 4096
+  context_len: 202752                  # native (launch flag caps max_model_len to 16384)
+
+startup_timeline:
+  "19:08:49": server_args parsed
+  "19:08:55": weight loaders initialize, HF auth warning
+  "19:09:03": Init torch distributed begin
+  "19:09:47": Init torch distributed ends (43-50 s per rank)
+  "19:09:51": Load weight begin (avail 265 GB per rank)
+  "19:12:46": Load weight end (173-174 s per rank, 61.13 GB weight mem)
+  "19:12:46": KV Cache allocated (3462464 tokens, 178.08 GB per rank)
+  "19:15:04": CUDA graph capture begin
+  "19:16:36": CUDA graph capture end (92 s, 52 shapes)
+  "19:16:58": Server ready ("fired up")
+
+probes_recorded_pre_bench:
+  - warmup_curl_returned_200: true
+  - warmup_response_model_id: lukealonso/GLM-5.1-NVFP4
+  - warmup_prompt_tokens: 11
+  - warmup_completion_tokens: 100       # with reasoning_tokens=97 (glm45 reasoning parser active)
+  - warmup_visible_content: "Hi!"
+
+sweep_scope:
+  profiles_run: ["1k1k (in progress)"]
+  profiles_queued: ["1k4k", "4k1k"]
+  planned_concurrencies: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+
+known_issues:
+  - |
+    DeepGemm warning on startup: "DeepGemm is enabled but the scale_fmt
+    of checkpoint is not ue8m0. This might cause accuracy degradation on
+    Blackwell." Observed on all 8 ranks. Not a crash, but flagged in
+    CLAUDE.md as a potential accuracy caveat — worth cross-checking
+    generation quality vs a reference before publishing numbers.
+  - |
+    Container was started without HF_TOKEN — eight "unauthenticated
+    requests" warnings at startup. Doesn't affect correctness, just
+    triggers rate-limit warnings. Safe to ignore on this model since
+    the weights are already cached locally (no downloads happened).

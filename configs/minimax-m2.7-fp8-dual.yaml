@@ -1,0 +1,100 @@
+model:
+  name: MiniMax-M2.7 (FP8 dual-instance)
+  hf_id: MiniMaxAI/MiniMax-M2.7
+  parent_config: minimax-m2.7.yaml
+  architecture: MoE
+  total_params: 230B
+  active_params: 10B
+  experts: 256
+  license: modified-mit (non-commercial)
+  precision: fp8  # vLLM-style block-FP8 (float8_e4m3fn, 128x128 blocks)
+
+# Why this is a separate config file:
+# --------------------------------------------------------------------------
+# MiniMax M2.7's MoE intermediate dimension is 1536, and the block-FP8
+# quantization ships with block_n=128. At TP=8 the per-rank output size
+# becomes 1536/8 = 192, which is not divisible by 128. Both SGLang and
+# vLLM reject the checkpoint at load time (SGLang raises ValueError
+# immediately; vLLM accepts the flag but deadlocks during KV cache
+# profiling with NCCL collectives — observed 2026-04-15 17:53).
+#
+# The architecturally supported TP is TP=4 (1536/4 = 384, divisible
+# by 128). NVIDIA's own M2.7 FP8 blog post also recommends TP=4.
+#
+# On an 8-GPU node the optimal production deployment is therefore
+# **two independent replicas per node**, each at TP=4:
+#   inst0 → GPUs 0,1,2,3 → port 8000
+#   inst1 → GPUs 4,5,6,7 → port 8001
+# This is NOT a "two copies of the same sweep" mistake — it's the real
+# production serving layout. At cluster scale (96 nodes) this yields
+# 192 replicas instead of 96.
+#
+# We deliberately violate the "1 server per node" SOP rule for this
+# specific model/precision combination. Document the exception clearly
+# in STATUS.md and CLAUDE.md.
+#
+# Note: at TP=4 + EP=4 each rank owns 256/4 = 64 experts.
+
+serving:
+  framework: vllm
+  container: nvcr.io/nvidia/vllm:26.01-py3
+  vllm_version: 0.13.0+faa43dbf
+  tp: 4                # architectural maximum (see "why" above)
+  ep: 4                # = TP, experts sharded across the 4 ranks
+  max_model_len: 16384
+  gpu_memory_utilization: 0.9
+
+  instances:
+    - name: m27-fp8-inst0
+      gpus: [0, 1, 2, 3]
+      port: 8000
+      gpus_flag: '"device=0,1,2,3"'
+    - name: m27-fp8-inst1
+      gpus: [4, 5, 6, 7]
+      port: 8001
+      gpus_flag: '"device=4,5,6,7"'
+
+  extra_flags:
+    - --enable-expert-parallel
+    - --trust-remote-code
+
+# Benchmark methodology for the dual-instance case:
+#
+# The headline number for this config is the AGGREGATE throughput of
+# both instances running simultaneously, not the throughput of either
+# instance in isolation. The sweeps must run in parallel (bench_sweep.sh
+# in both bench:0 and bench:1 tmux windows, started roughly together)
+# to ensure both instances are under load during measurement.
+#
+# Aggregation rules:
+#   output_throughput_dual = inst0.output_throughput + inst1.output_throughput
+#   mean_ttft_dual         = weighted mean by completed requests
+#   mean_tpot_dual         = weighted mean by completed tokens
+#   duration               = max(inst0.duration, inst1.duration)
+#
+# The combined JSON is written to:
+#   m27_fp8_tp4_dual_combined_conc{N}_1k1k.json
+# with fields mirroring the single-instance schema plus a
+# "components": [inst0_tag, inst1_tag] field pointing at the per-instance
+# JSONs.
+benchmark:
+  seq_lens: [1k1k, 1k4k, 4k1k]
+  concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+  sweep_mode: parallel_dual
+  aggregate_output_file: m27_fp8_tp4_dual_combined_conc{CONC}_1k1k.json
+  per_instance_output_files:
+    - m27_fp8_tp4_inst0_conc{CONC}_1k1k.json
+    - m27_fp8_tp4_inst1_conc{CONC}_1k1k.json
+
+# Cluster scaling note — for the writeup:
+cluster_deployment:
+  replicas_per_node: 2
+  nodes_in_reference_cluster: 96
+  total_replicas: 192
+  cost_efficiency: |
+    At TP=4, a single M2.7 FP8 replica uses 4 B300s. Two replicas
+    fully saturate an 8-GPU node. Compared to the NVFP4 TP=8 single-
+    replica config (1 replica per node, 96 total), FP8 dual-instance
+    yields 2x the replica count at the same node count — meaningful
+    for latency-sensitive serving where queue time matters more than
+    peak per-replica throughput.

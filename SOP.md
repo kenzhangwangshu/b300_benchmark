@@ -23,8 +23,8 @@ The remainder of this file is the canonical step-by-step process and the histori
 In the `bench` tmux session:
 
 ```bash
-sudo docker ps                 # Nothing running? Good.
-sudo docker rm -f <name>       # If something is running, kill it first.
+docker ps                      # Nothing running? Good. (`howell` is in docker group, no sudo.)
+docker rm -f <name>             # If something is running, kill it first.
 ```
 
 ---
@@ -56,30 +56,38 @@ The wrapper bind-mounts:
 - **`~/benchmark/results` → `/results`** (where benchmark JSONs and logs land, side-by-side)
 
 Per-model wrapper scripts under `~/benchmark/scripts/serve_*.sh`:
-- `serve_minimax-m2.7_nvfp4.sh` — vLLM path, WORKING (legacy / historical baseline)
-- `serve_minimax-m2.7_nvfp4_sglang.sh` — SGLang path, **WORKING** (used for the canonical M2.7 SGLang sweep)
+- `serve_minimax-m2.7_nvfp4.sh` — vLLM path, WORKING (legacy / historical baseline, M2.7 NVFP4 vLLM 1k1k complete)
+- `serve_minimax-m2.7_nvfp4_sglang.sh` — SGLang path, **WORKING** (canonical M2.7 SGLang 1k1k complete)
 - `serve_minimax-m2.7_nvfp4_sglang_ep8.sh` — SGLang path with `--expert-parallel-size 8`. **DOES NOT WORK** — crashes during ModelOpt weight post-processing (modelopt_quant.py:1754 shape mismatch). Retained for the next time we test EP after an upstream fix.
 - `serve_kimi-k2.5_nvfp4.sh` — vLLM path, never benchmarked
-- `serve_kimi-k2.5_nvfp4_sglang.sh` — SGLang path, **WORKING** (Kimi K2.5 1k1k partial sweep landed)
+- `serve_kimi-k2.5_nvfp4_sglang.sh` — SGLang path, **WORKING** (Kimi K2.5 1k1k complete-to-knee)
+- `serve_glm-5.1_nvfp4_sglang.sh` — SGLang path, **WORKING** (GLM-5.1 1k1k parser-off complete)
+- `serve_deepseek-r1_nvfp4_sglang.sh` — SGLang path, **WORKING** (DeepSeek R1 1k1k complete; requires `TORCHINDUCTOR_COMPILE_THREADS=1`)
+- `serve_qwen3.5-397b_nvfp4_sglang.sh` — SGLang path, **WORKING** (Qwen 3.5 397B-A17B 1k1k complete, peak 10652 t/s)
+- `serve_minimax-m2.7_fp8_vllm_inst0.sh` / `inst1.sh` — dual-instance TP=4 FP8 (block-alignment workaround, see `docs/quantization_block_alignment.md`)
 - (add more here as models come online)
 
 **Framework convention in script names:** `serve_<model>_<precision>.sh` is vLLM; `serve_<model>_<precision>_sglang.sh` is SGLang. Matches the `results/vllm/` vs `results/sglang/` directory split.
 
-Always pass `--quantization modelopt_fp4`. Never pass `--enable-expert-parallel` — unsupported for NVFP4 MoE in vLLM 0.13.0.
+Always pass `--quantization modelopt_fp4`. Never pass `--enable-expert-parallel` / `--expert-parallel-size N` — EP+NVFP4 is broken on **both** vLLM 0.13.0 (kernel dispatch rejects `expert_map`) and SGLang 0.5.10.post1 (modelopt loader shape mismatch at `modelopt_quant.py:1754`). Verified runtime on 2026-04-14. See CLAUDE.md Known Issues.
 
-Wait for `Application startup complete.` in logs. **Do not Ctrl+C** — stop the container from the `bench` pane via `sudo docker rm -f <name>`.
+**Never pass `--reasoning-parser` or `--tool-call-parser`** for benchmark runs. SGLang reasoning parsers buffer `<think>...</think>` content before streaming, which inflates client-measured TTFT by the entire reasoning-phase duration (GLM-5.1 A/B: 3895 ms parser-on → 197 ms parser-off at conc=1).
+
+Wait for `Application startup complete.` in logs. **Do not Ctrl+C** — stop the container from the `bench` pane via `docker rm -f <name>`.
 
 ---
 
 ## Step 2: Warmup (from `bench` session) — ONCE per container
 
+SGLang primary — use port 30000 (vLLM still listens on 8000; swap the port for the fallback path):
+
 ```bash
-curl http://localhost:8000/v1/chat/completions \
+curl http://localhost:30000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"'$MODEL'","messages":[{"role":"user","content":"hello"}],"max_tokens":16}'
 ```
 
-Wait for a 200 response. This is the **only** warmup needed. Do not repeat it between concurrency levels or between sequence-length profiles. The `vllm bench serve` tool also runs its own single-prompt warmup before each timed run, which is fine — it's flushing shape-specific JIT costs, not a reason to curl again.
+Wait for a 200 response. This is the **only** warmup needed. Do not repeat it between concurrency levels or between sequence-length profiles — the per-container curl flushes CUDA graphs / JIT for all subsequent sweep levels against the same container. Pass `--ready-check-timeout-sec 0` to the bench tool so it doesn't run its own 10-min per-level readiness probe (baked into `bench_sweep.sh`).
 
 ---
 
@@ -100,13 +108,14 @@ All three profiles fit comfortably under `max-model-len=16384` (max need is 5120
 ## Step 4: Concurrency Sweep (per sequence length)
 
 ```
-Concurrency levels: 1, 2, 4, 8, 16, 32, 64, 128, 256
+Concurrency levels: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
 ```
 
-Start with 1k1k. Stop when any of:
-- Server returns errors / crashes → previous level is the ceiling
-- TTFT P99 exceeds SLA (~5 s interactive, ~30 s batch)
-- Output throughput plateaus or declines
+Start with 1k1k. `bench_sweep.sh` applies four layered stop guards — any one triggers `break`:
+1. **Non-zero `Failed requests:`** in the log
+2. **Python exception / HTTP 400 / OCI runtime error** — grep `ValueError: Initial test run failed|Error: Bad Request|^Traceback|OCI runtime exec failed`
+3. **Missing / empty JSON** result file
+4. **Plateau** — output_throughput gain vs. previous level < `PLATEAU_THRESHOLD` (default 10%). Motivating case: Kimi K2.5 plateaued by conc=64. Realized case on this node: Qwen 3.5 397B hit conc=256=10652 t/s then conc=512=10258 t/s (−3.7%), guard fired cleanly.
 
 ### Num prompts per concurrency level
 
@@ -237,34 +246,47 @@ MODEL=lukealonso/MiniMax-M2.7-NVFP4
 # Do NOT add --enable-expert-parallel (unsupported for NVFP4 MoE in 0.13.0)
 ```
 
-### GLM-5 (NVFP4)
+### GLM-5.1 (NVFP4)
 ```bash
-MODEL=nvidia/GLM-5-NVFP4
-# Add: --quantization modelopt_fp4 --tool-call-parser glm47 --reasoning-parser glm45
+MODEL=lukealonso/GLM-5.1-NVFP4
+# --quantization modelopt_fp4
+# NO parsers (SGLang glm45 reasoning parser buffers <think>...</think>,
+# inflates TTFT 20× at conc=1). Full details in configs/glm-5.1.yaml.
 ```
 
 ### Kimi K2.5 (NVFP4)
 ```bash
 MODEL=nvidia/Kimi-K2.5-NVFP4
-# Add: --quantization modelopt_fp4 --tool-call-parser kimi_k2 --reasoning-parser kimi_k2
+# --quantization modelopt_fp4
+# NO parsers (project rule; also avoids kimi_k2 parser reasoning buffering).
+# Known caveat: SGLang chat preprocessor takes the slow tokenizer path
+# (tokenization_kimi.py:178). TTFT inflated 10–30%. See configs/kimi-k2.5.yaml.
 ```
 
-### Qwen 3.5 397B (NVFP4)
+### Qwen 3.5 397B-A17B (NVFP4)
 ```bash
 MODEL=nvidia/Qwen3.5-397B-A17B-NVFP4
-# Add: --quantization modelopt_fp4 --reasoning-parser qwen3
-```
-
-### DeepSeek V3.2 (NVFP4)
-```bash
-MODEL=nvidia/DeepSeek-V3.2-NVFP4
-# Note: Currently TensorRT-LLM only — different serving stack needed
+# --quantization modelopt_fp4 --trust-remote-code --moe-runner-backend flashinfer_trtllm
+# NO parsers. TORCHINDUCTOR_COMPILE_THREADS=1 in docker -e (preventative).
 ```
 
 ### DeepSeek R1 (NVFP4)
 ```bash
 MODEL=nvidia/DeepSeek-R1-NVFP4
-# Note: Currently TensorRT-LLM only — different serving stack needed
+# --quantization modelopt_fp4 --trust-remote-code
+# --attention-backend trtllm_mla --moe-runner-backend flashinfer_trtllm
+# --kv-cache-dtype fp8_e4m3 (auto-promotes on DeepSeek-V3 MLA anyway; explicit for auditability)
+# REQUIRED env: TORCHINDUCTOR_COMPILE_THREADS=1 to bypass the inductor
+# compile-worker CUDA-init bug hit in vocab_parallel_embedding. Full
+# trace in results/metadata/DeepSeek-R1-NVFP4_sglang_startup.yaml.
+# NVIDIA HF card lists TRT-LLM only but SGLang and vLLM both work.
+```
+
+### DeepSeek V3.2 (NVFP4)
+```bash
+MODEL=nvidia/DeepSeek-V3.2-NVFP4
+# Not downloaded; HF card marks TRT-LLM only. Deferred.
+# Same DeepSeek-V3 class as R1, so same flag set should work once downloaded.
 ```
 
 ---

@@ -1,0 +1,82 @@
+model:
+  name: GLM-5.1
+  hf_id: lukealonso/GLM-5.1-NVFP4
+  architecture: MoE (GLM-5 class)
+  total_params: 744B
+  active_params: 40B
+  experts: 256
+  license: MIT
+  lineage: |
+    Same architecture as GLM-5. GLM-5.1 is a post-training upgrade
+    focused on agentic coding — same weights layout, different
+    fine-tuning distribution. Serving flags should match GLM-5.
+
+serving:
+  framework: sglang
+  container: lmsysorg/sglang:latest-cu130-runtime
+  sglang_version: 0.5.10.post1
+  port: 30000
+  tp: 8
+  # EP+NVFP4 broken on SGLang 0.5.10.post1 modelopt loader (verified on
+  # M2.7 2026-04-14). Not retested on GLM-5.1 — same loader path, same bug.
+  ep: 1
+  ep_runtime_verified: false_inferred_from_m27
+  max_model_len: 16384
+  extra_flags:
+    - --trust-remote-code
+    - --quantization modelopt_fp4
+  parser_notes: |
+    **NO --reasoning-parser and NO --tool-call-parser** for benchmark
+    runs. Initial run on 2026-04-15 used `--reasoning-parser glm45` and
+    `--tool-call-parser glm47`; observed TTFT at conc=1 was 3895 ms
+    with TPOT 8.4 ms — inconsistent with any compute-bound prefill.
+    Cause: SGLang's glm45 reasoning parser buffers <think>...</think>
+    content before streaming, so the first byte a client sees is the
+    first post-reasoning token, not the first decode token. For a
+    random-prompt workload GLM-5.1 generates long reasoning chains
+    (~430 tokens estimated at TPOT 8.4 ms) before emitting anything.
+    Parsers were removed for canonical benchmark sweeps. Parser-on
+    results are preserved for comparison under
+    `~/benchmark/results/sglang/glm-5.1/json_withparsers/` and
+    `logs_withparsers/`. Project rule: no parsers in benchmark runs
+    (see CLAUDE.md).
+
+storage:
+  hf_cache_path: ~/.cache/huggingface/hub/models--lukealonso--GLM-5.1-NVFP4
+  size_on_disk: 434 GB
+  shards: 85
+
+benchmark:
+  seq_lens: [1k1k, 1k4k, 4k1k]
+  concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+
+results:
+  "1k1k":
+    status: complete
+    framework: sglang
+    container: glm51 (lmsysorg/sglang:latest-cu130-runtime)
+    sglang_version: 0.5.10.post1
+    completed_concurrencies: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+    json_dir: ~/benchmark/results/sglang/glm-5.1/json/
+    parser_on_archive: ~/benchmark/results/sglang/glm-5.1/json_withparsers/
+    headline:
+      conc_1:   { out_tps:   82.4, mean_tpot_ms: 12.07, mean_ttft_ms:  197 }
+      conc_16:  { out_tps:  960.2, mean_tpot_ms: 16.18, mean_ttft_ms:  471 }
+      conc_64:  { out_tps: 2610.3, mean_tpot_ms: 23.59, mean_ttft_ms:  960 }
+      conc_128: { out_tps: 4520.2, mean_tpot_ms: 26.99, mean_ttft_ms: 1365 }
+      conc_256: { out_tps: 6786.8, mean_tpot_ms: 35.39, mean_ttft_ms: 2364 }
+      conc_512: { out_tps: 8913.3, mean_tpot_ms: 51.07, mean_ttft_ms: 6306 }
+    peak: { tps: 8913.3, at_concurrency: 512 }
+    ab_parser_findings: |
+      Initial 2026-04-15 run had `--reasoning-parser glm45 --tool-call-parser glm47`.
+      TTFT at conc=1 was 3895 ms (vs 197 ms parser-off) — confirmed the reasoning
+      parser buffers <think>...</think> content before streaming, so
+      client-measured TTFT inflates by the entire reasoning-phase duration.
+      Parser-on data is at json_withparsers/ for diagnostic comparison only.
+      CLAUDE.md rule: NO parsers in benchmark runs (2026-04-15).
+  "1k4k":
+    status: not_yet_run
+    note: "Deferred at session-end 2026-04-16 (node wrap-up for driver upgrade)."
+  "4k1k":
+    status: not_yet_run
+    note: "Deferred at session-end 2026-04-16 (node wrap-up for driver upgrade)."

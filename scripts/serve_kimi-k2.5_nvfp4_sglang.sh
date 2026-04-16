@@ -22,17 +22,17 @@ NAME=kimi25-sglang
 IMAGE=lmsysorg/sglang:latest-cu130-runtime
 MODEL=nvidia/Kimi-K2.5-NVFP4
 
-RUNNING=$(sudo docker ps --format '{{.Names}}')
+RUNNING=$(docker ps --format '{{.Names}}')
 if [ -n "$RUNNING" ]; then
   echo "ERROR: container(s) already running: $RUNNING" >&2
-  echo "Kill them first with: sudo docker rm -f <name>" >&2
+  echo "Kill them first with: docker rm -f <name>" >&2
   exit 2
 fi
 
 mkdir -p ~/benchmark/results/sglang/kimi-k2.5/{json,logs}
 
 echo "Launching $NAME  model=$MODEL  image=$IMAGE  TP=8 EP=1"
-sudo docker run --gpus all --shm-size 32g --ipc=host --ulimit memlock=-1 \
+docker run --gpus all --shm-size 32g --ipc=host --ulimit memlock=-1 \
   -v ~/hf_hub_cache:/root/.cache/huggingface \
   -v ~/.cache/huggingface/hub:/root/.cache/huggingface/hub \
   -v ~/benchmark/results:/results \

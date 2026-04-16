@@ -38,17 +38,17 @@ shift 2
 IMAGE="nvcr.io/nvidia/vllm:26.01-py3"
 
 # Hard rule: only one container at a time.
-RUNNING=$(sudo docker ps --format '{{.Names}}')
+RUNNING=$(docker ps --format '{{.Names}}')
 if [ -n "$RUNNING" ]; then
   echo "ERROR: container(s) already running: $RUNNING" >&2
-  echo "Kill them first with: sudo docker rm -f <name>" >&2
+  echo "Kill them first with: docker rm -f <name>" >&2
   exit 2
 fi
 
 mkdir -p ~/benchmark/results/raw
 
 echo "Launching $NAME  model=$MODEL  image=$IMAGE"
-sudo docker run --gpus all --ipc=host --ulimit memlock=-1 \
+docker run --gpus all --ipc=host --ulimit memlock=-1 \
   --shm-size=16g \
   -v ~/hf_hub_cache:/root/.cache/huggingface \
   -v ~/.cache/huggingface/hub:/root/.cache/huggingface/hub \

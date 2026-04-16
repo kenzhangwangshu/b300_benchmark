@@ -1,39 +1,0 @@
-/usr/local/lib/python3.12/dist-packages/torchvision/io/image.py:14: UserWarning: Failed to load image Python extension: 'Could not load this library: /usr/local/lib/python3.12/dist-packages/torchvision/image.so'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
-  warn(
-Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x7ff1555bcfe0>, seed=0, num_prompts=80, dataset_name='random', no_stream=False, dataset_path=None, no_oversample=False, skip_chat_template=False, disable_shuffle=False, custom_output_len=256, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, blazedit_min_distance=0.0, blazedit_max_distance=1.0, random_input_len=1024, random_output_len=1024, random_range_ratio=0.0, random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, label=None, backend='openai-chat', base_url=None, host='127.0.0.1', port=8000, endpoint='/v1/chat/completions', header=None, max_concurrency=8, model='lukealonso/MiniMax-M2.7-NVFP4', tokenizer=None, tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, trust_remote_code=False, disable_tqdm=False, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir=None, result_filename='/root/.cache/huggingface/MiniMax-M2.7-NVFP4_nvfp4_vllm_tp8_conc8_1k1k.json', ignore_eos=False, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-8aa44514-', top_p=None, top_k=None, min_p=None, temperature=None, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, common_prefix_len=None, served_model_name=None, lora_modules=None, ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=600, extra_body=None)
-INFO 04-13 19:41:36 [datasets.py:612] Sampling input_len from [1024, 1024] and output_len from [1024, 1024]
-Starting initial single prompt test run...
-Waiting for endpoint to become up in 600 seconds
- |          | 00:00 elapsed, ? remaining |          | 00:00 elapsed, 00:09 remaining |          | 00:13 elapsed, 4244:14:30 remaining
-Initial test run completed.
-Starting main benchmark run...
-Traffic request rate: inf
-Burstiness factor: 1.0 (Poisson process)
-Maximum request concurrency: 8
-  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:13<17:52, 13.58s/it] 11%|█▏        | 9/80 [00:26<03:06,  2.63s/it] 21%|██▏       | 17/80 [00:40<02:11,  2.09s/it] 31%|███▏      | 25/80 [00:53<01:45,  1.91s/it] 41%|████▏     | 33/80 [01:07<01:25,  1.83s/it] 42%|████▎     | 34/80 [01:07<01:19,  1.72s/it] 51%|█████▏    | 41/80 [01:21<01:10,  1.81s/it] 52%|█████▎    | 42/80 [01:21<01:04,  1.69s/it] 61%|██████▏   | 49/80 [01:35<00:55,  1.80s/it] 62%|██████▎   | 50/80 [01:35<00:50,  1.67s/it] 71%|███████▏  | 57/80 [01:48<00:40,  1.78s/it] 72%|███████▎  | 58/80 [01:48<00:36,  1.65s/it] 81%|████████▏ | 65/80 [02:02<00:26,  1.79s/it] 82%|████████▎ | 66/80 [02:02<00:23,  1.65s/it] 91%|█████████▏| 73/80 [02:16<00:12,  1.79s/it] 92%|█████████▎| 74/80 [02:16<00:09,  1.65s/it]100%|██████████| 80/80 [02:16<00:00,  1.71s/it]
-tip: install termplotlib and gnuplot to plot the metrics
-============ Serving Benchmark Result ============
-Successful requests:                     80        
-Failed requests:                         0         
-Maximum request concurrency:             8         
-Benchmark duration (s):                  136.62    
-Total input tokens:                      81920     
-Total generated tokens:                  81920     
-Request throughput (req/s):              0.59      
-Output token throughput (tok/s):         599.63    
-Peak output token throughput (tok/s):    624.00    
-Peak concurrent requests:                16.00     
-Total token throughput (tok/s):          1199.26   
----------------Time to First Token----------------
-Mean TTFT (ms):                          126.61    
-Median TTFT (ms):                        89.68     
-P99 TTFT (ms):                           279.23    
------Time per Output Token (excl. 1st token)------
-Mean TPOT (ms):                          13.23     
-Median TPOT (ms):                        13.24     
-P99 TPOT (ms):                           13.45     
----------------Inter-token Latency----------------
-Mean ITL (ms):                           13.22     
-Median ITL (ms):                         13.20     
-P99 ITL (ms):                            13.48     
-==================================================
