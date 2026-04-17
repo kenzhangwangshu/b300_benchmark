@@ -1,11 +1,11 @@
-benchmark_args=Namespace(backend='sglang-oai-chat', base_url='http://127.0.0.1:30000', host='0.0.0.0', port=None, ready_check_timeout_sec=0, dataset_name='random', dataset_path='', model='nvidia/Kimi-K2.5-NVFP4', served_model_name=None, tokenizer=None, num_prompts=320, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=4096, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=32, output_file='/results/sglang/kimi-k2.5/1k4k/json/Kimi-K2.5-NVFP4_nvfp4_sglang_tp8_conc32_1k4k.json', output_details=False, print_requests=False, disable_tqdm=False, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
-Namespace(backend='sglang-oai-chat', base_url='http://127.0.0.1:30000', host='0.0.0.0', port=30000, ready_check_timeout_sec=0, dataset_name='random', dataset_path='', model='nvidia/Kimi-K2.5-NVFP4', served_model_name=None, tokenizer=None, num_prompts=320, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=4096, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=32, output_file='/results/sglang/kimi-k2.5/1k4k/json/Kimi-K2.5-NVFP4_nvfp4_sglang_tp8_conc32_1k4k.json', output_details=False, print_requests=False, disable_tqdm=False, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+benchmark_args=Namespace(backend='sglang-oai-chat', base_url='http://127.0.0.1:30000', host='0.0.0.0', port=None, ready_check_timeout_sec=0, dataset_name='random', dataset_path='', model='nvidia/Kimi-K2.5-NVFP4', served_model_name=None, tokenizer=None, num_prompts=320, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=4096, random_output_len=1024, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=32, output_file='/results/sglang/kimi-k2.5/4k1k/json/Kimi-K2.5-NVFP4_nvfp4_sglang_tp8_conc32_4k1k.json', output_details=False, print_requests=False, disable_tqdm=False, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Namespace(backend='sglang-oai-chat', base_url='http://127.0.0.1:30000', host='0.0.0.0', port=30000, ready_check_timeout_sec=0, dataset_name='random', dataset_path='', model='nvidia/Kimi-K2.5-NVFP4', served_model_name=None, tokenizer=None, num_prompts=320, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=4096, random_output_len=1024, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=32, output_file='/results/sglang/kimi-k2.5/4k1k/json/Kimi-K2.5-NVFP4_nvfp4_sglang_tp8_conc32_4k1k.json', output_details=False, print_requests=False, disable_tqdm=False, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
 
-#Input tokens: 327680
-#Output tokens: 1310720
+#Input tokens: 1310720
+#Output tokens: 327680
 Starting warmup with 1 sequences...
 Warmup completed with 1 sequences. Starting main benchmark run...
-  0%|          | 0/320 [00:00<?, ?it/s]  0%|          | 1/320 [00:51<4:33:10, 51.38s/it] 10%|█         | 33/320 [01:42<12:41,  2.65s/it]  20%|██        | 65/320 [02:33<08:38,  2.03s/it] 30%|███       | 97/320 [03:24<06:49,  1.84s/it] 40%|████      | 129/320 [04:15<05:33,  1.74s/it] 50%|█████     | 161/320 [05:06<04:28,  1.69s/it] 60%|██████    | 193/320 [05:57<03:30,  1.66s/it] 70%|███████   | 225/320 [06:48<02:35,  1.64s/it] 80%|████████  | 257/320 [07:39<01:42,  1.63s/it] 90%|█████████ | 289/320 [08:30<00:50,  1.61s/it]100%|██████████| 320/320 [08:30<00:00,  1.60s/it]
+  0%|          | 0/320 [00:00<?, ?it/s]  0%|          | 1/320 [00:15<1:22:56, 15.60s/it] 10%|█         | 33/320 [00:31<03:53,  1.23it/s]  20%|██        | 65/320 [00:46<02:36,  1.63it/s] 30%|███       | 97/320 [01:01<02:02,  1.82it/s] 40%|████      | 129/320 [01:16<01:39,  1.92it/s] 49%|████▉     | 156/320 [01:18<01:02,  2.63it/s] 50%|█████     | 160/320 [01:30<01:00,  2.63it/s] 50%|█████     | 161/320 [01:31<01:28,  1.80it/s] 59%|█████▉    | 188/320 [01:34<00:49,  2.65it/s] 60%|██████    | 193/320 [01:46<01:12,  1.76it/s] 61%|██████    | 194/320 [01:47<01:13,  1.72it/s] 70%|███████   | 225/320 [02:01<00:48,  1.95it/s] 71%|███████   | 226/320 [02:02<00:49,  1.89it/s] 80%|████████  | 257/320 [02:17<00:30,  2.04it/s] 81%|████████  | 258/320 [02:18<00:31,  1.97it/s] 90%|█████████ | 289/320 [02:32<00:14,  2.10it/s] 91%|█████████ | 290/320 [02:33<00:14,  2.03it/s]100%|██████████| 320/320 [02:33<00:00,  2.09it/s]
 Calling super().encode with {'add_special_tokens': False}
 Calling super().encode with {'add_special_tokens': False}
 Calling super().encode with {'add_special_tokens': False}
@@ -332,35 +332,35 @@ Backend:                                 sglang-oai-chat
 Traffic request rate:                    inf       
 Max request concurrency:                 32        
 Successful requests:                     320       
-Benchmark duration (s):                  510.73    
-Total input tokens:                      327680    
-Total input text tokens:                 327680    
-Total generated tokens:                  1310720   
-Total generated tokens (retokenized):    1306256   
-Request throughput (req/s):              0.63      
-Input token throughput (tok/s):          641.59    
-Output token throughput (tok/s):         2566.36   
-Peak output token throughput (tok/s):    2752.00   
+Benchmark duration (s):                  153.34    
+Total input tokens:                      1310720   
+Total input text tokens:                 1310720   
+Total generated tokens:                  327680    
+Total generated tokens (retokenized):    327260    
+Request throughput (req/s):              2.09      
+Input token throughput (tok/s):          8547.55   
+Output token throughput (tok/s):         2136.89   
+Peak output token throughput (tok/s):    2720.00   
 Peak concurrent requests:                64        
-Total token throughput (tok/s):          3207.95   
-Concurrency:                             32.00     
+Total token throughput (tok/s):          10684.44  
+Concurrency:                             31.98     
 ----------------End-to-End Latency----------------
-Mean E2E Latency (ms):                   51066.78  
-Median E2E Latency (ms):                 51093.26  
-P90 E2E Latency (ms):                    51281.64  
-P99 E2E Latency (ms):                    51379.04  
+Mean E2E Latency (ms):                   15323.45  
+Median E2E Latency (ms):                 15245.83  
+P90 E2E Latency (ms):                    15692.99  
+P99 E2E Latency (ms):                    17524.55  
 ---------------Time to First Token----------------
-Mean TTFT (ms):                          733.73    
-Median TTFT (ms):                        682.77    
-P99 TTFT (ms):                           849.20    
+Mean TTFT (ms):                          2195.94   
+Median TTFT (ms):                        2177.59   
+P99 TTFT (ms):                           2961.72   
 -----Time per Output Token (excl. 1st token)------
-Mean TPOT (ms):                          12.29     
-Median TPOT (ms):                        12.29     
-P99 TPOT (ms):                           12.40     
+Mean TPOT (ms):                          12.83     
+Median TPOT (ms):                        12.81     
+P99 TPOT (ms):                           14.52     
 ---------------Inter-Token Latency----------------
-Mean ITL (ms):                           12.33     
-Median ITL (ms):                         12.32     
-P95 ITL (ms):                            12.77     
-P99 ITL (ms):                            12.98     
-Max ITL (ms):                            482.22    
+Mean ITL (ms):                           12.85     
+Median ITL (ms):                         12.48     
+P95 ITL (ms):                            12.92     
+P99 ITL (ms):                            13.18     
+Max ITL (ms):                            2264.87   
 ==================================================
