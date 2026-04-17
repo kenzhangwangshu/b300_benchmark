@@ -1,0 +1,46 @@
+benchmark_args=Namespace(backend='sglang-oai-chat', base_url='http://127.0.0.1:30000', host='0.0.0.0', port=None, ready_check_timeout_sec=0, dataset_name='random', dataset_path='', model='nvidia/Qwen3.5-397B-A17B-NVFP4', served_model_name=None, tokenizer=None, num_prompts=160, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=1024, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=16, output_file='/results/sglang/qwen3.5-397b-a17b/json/Qwen3.5-397B-A17B-NVFP4_nvfp4_sglang_tp8_conc16_1k1k.json', output_details=False, print_requests=False, disable_tqdm=False, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Namespace(backend='sglang-oai-chat', base_url='http://127.0.0.1:30000', host='0.0.0.0', port=30000, ready_check_timeout_sec=0, dataset_name='random', dataset_path='', model='nvidia/Qwen3.5-397B-A17B-NVFP4', served_model_name=None, tokenizer=None, num_prompts=160, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=1024, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=16, output_file='/results/sglang/qwen3.5-397b-a17b/json/Qwen3.5-397B-A17B-NVFP4_nvfp4_sglang_tp8_conc16_1k1k.json', output_details=False, print_requests=False, disable_tqdm=False, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 163840
+#Output tokens: 163840
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+  0%|          | 0/160 [00:00<?, ?it/s]  1%|          | 1/160 [00:07<20:18,  7.67s/it] 11%|█         | 17/160 [00:15<01:48,  1.31it/s] 21%|██        | 33/160 [00:22<01:15,  1.69it/s] 31%|███       | 49/160 [00:29<00:59,  1.88it/s] 41%|████      | 65/160 [00:37<00:47,  2.00it/s] 51%|█████     | 81/160 [00:44<00:38,  2.06it/s] 61%|██████    | 97/160 [00:51<00:29,  2.10it/s] 71%|███████   | 113/160 [00:59<00:22,  2.13it/s] 81%|████████  | 129/160 [01:06<00:14,  2.15it/s] 91%|█████████ | 145/160 [01:13<00:06,  2.17it/s]100%|██████████| 160/160 [01:13<00:00,  2.17it/s]
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang-oai-chat
+Traffic request rate:                    inf       
+Max request concurrency:                 16        
+Successful requests:                     160       
+Benchmark duration (s):                  73.59     
+Total input tokens:                      163840    
+Total input text tokens:                 163840    
+Total generated tokens:                  163840    
+Total generated tokens (retokenized):    163598    
+Request throughput (req/s):              2.17      
+Input token throughput (tok/s):          2226.29   
+Output token throughput (tok/s):         2226.29   
+Peak output token throughput (tok/s):    2464.00   
+Peak concurrent requests:                32        
+Total token throughput (tok/s):          4452.58   
+Concurrency:                             15.99     
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   7356.06   
+Median E2E Latency (ms):                 7298.44   
+P90 E2E Latency (ms):                    7538.47   
+P99 E2E Latency (ms):                    7664.14   
+---------------Time to First Token----------------
+Mean TTFT (ms):                          551.05    
+Median TTFT (ms):                        495.92    
+P99 TTFT (ms):                           786.01    
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          6.65      
+Median TPOT (ms):                        6.65      
+P99 TPOT (ms):                           6.76      
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           6.66      
+Median ITL (ms):                         6.66      
+P95 ITL (ms):                            6.77      
+P99 ITL (ms):                            6.83      
+Max ITL (ms):                            295.40    
+==================================================

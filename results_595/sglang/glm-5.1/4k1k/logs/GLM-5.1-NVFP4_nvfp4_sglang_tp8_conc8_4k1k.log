@@ -1,0 +1,46 @@
+benchmark_args=Namespace(backend='sglang-oai-chat', base_url='http://127.0.0.1:30000', host='0.0.0.0', port=None, ready_check_timeout_sec=0, dataset_name='random', dataset_path='', model='lukealonso/GLM-5.1-NVFP4', served_model_name=None, tokenizer=None, num_prompts=80, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=4096, random_output_len=1024, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=8, output_file='/results/sglang/glm-5.1/4k1k/json/GLM-5.1-NVFP4_nvfp4_sglang_tp8_conc8_4k1k.json', output_details=False, print_requests=False, disable_tqdm=False, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Namespace(backend='sglang-oai-chat', base_url='http://127.0.0.1:30000', host='0.0.0.0', port=30000, ready_check_timeout_sec=0, dataset_name='random', dataset_path='', model='lukealonso/GLM-5.1-NVFP4', served_model_name=None, tokenizer=None, num_prompts=80, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=4096, random_output_len=1024, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=8, output_file='/results/sglang/glm-5.1/4k1k/json/GLM-5.1-NVFP4_nvfp4_sglang_tp8_conc8_4k1k.json', output_details=False, print_requests=False, disable_tqdm=False, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 327680
+#Output tokens: 81920
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:16<21:32, 16.36s/it] 11%|█▏        | 9/80 [00:32<03:41,  3.11s/it] 21%|██▏       | 17/80 [00:47<02:34,  2.45s/it] 31%|███▏      | 25/80 [01:03<02:02,  2.23s/it] 41%|████▏     | 33/80 [01:18<01:39,  2.12s/it] 51%|█████▏    | 41/80 [01:34<01:20,  2.06s/it] 61%|██████▏   | 49/80 [01:50<01:02,  2.02s/it] 71%|███████▏  | 57/80 [02:05<00:45,  2.00s/it] 81%|████████▏ | 65/80 [02:21<00:29,  1.98s/it] 91%|█████████▏| 73/80 [02:36<00:13,  1.97s/it]100%|██████████| 80/80 [02:36<00:00,  1.96s/it]
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang-oai-chat
+Traffic request rate:                    inf       
+Max request concurrency:                 8         
+Successful requests:                     80        
+Benchmark duration (s):                  156.81    
+Total input tokens:                      327680    
+Total input text tokens:                 327680    
+Total generated tokens:                  81920     
+Total generated tokens (retokenized):    81905     
+Request throughput (req/s):              0.51      
+Input token throughput (tok/s):          2089.66   
+Output token throughput (tok/s):         522.41    
+Peak output token throughput (tok/s):    580.00    
+Peak concurrent requests:                16        
+Total token throughput (tok/s):          2612.07   
+Concurrency:                             8.00      
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   15677.82  
+Median E2E Latency (ms):                 15600.28  
+P90 E2E Latency (ms):                    15718.99  
+P99 E2E Latency (ms):                    16363.49  
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1196.84   
+Median TTFT (ms):                        1230.71   
+P99 TTFT (ms):                           2000.39   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          14.16     
+Median TPOT (ms):                        14.09     
+P99 TPOT (ms):                           14.70     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           14.16     
+Median ITL (ms):                         14.05     
+P95 ITL (ms):                            14.13     
+P99 ITL (ms):                            14.17     
+Max ITL (ms):                            930.14    
+==================================================

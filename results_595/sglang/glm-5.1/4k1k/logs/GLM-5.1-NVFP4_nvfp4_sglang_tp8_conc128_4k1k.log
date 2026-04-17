@@ -1,0 +1,46 @@
+benchmark_args=Namespace(backend='sglang-oai-chat', base_url='http://127.0.0.1:30000', host='0.0.0.0', port=None, ready_check_timeout_sec=0, dataset_name='random', dataset_path='', model='lukealonso/GLM-5.1-NVFP4', served_model_name=None, tokenizer=None, num_prompts=1280, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=4096, random_output_len=1024, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=128, output_file='/results/sglang/glm-5.1/4k1k/json/GLM-5.1-NVFP4_nvfp4_sglang_tp8_conc128_4k1k.json', output_details=False, print_requests=False, disable_tqdm=False, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Namespace(backend='sglang-oai-chat', base_url='http://127.0.0.1:30000', host='0.0.0.0', port=30000, ready_check_timeout_sec=0, dataset_name='random', dataset_path='', model='lukealonso/GLM-5.1-NVFP4', served_model_name=None, tokenizer=None, num_prompts=1280, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=4096, random_output_len=1024, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=128, output_file='/results/sglang/glm-5.1/4k1k/json/GLM-5.1-NVFP4_nvfp4_sglang_tp8_conc128_4k1k.json', output_details=False, print_requests=False, disable_tqdm=False, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=1, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 5242880
+#Output tokens: 1310720
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+  0%|          | 0/1280 [00:00<?, ?it/s]  0%|          | 1/1280 [00:45<16:10:56, 45.55s/it] 10%|█         | 129/1280 [01:31<11:31,  1.66it/s]  20%|██        | 257/1280 [02:16<07:48,  2.19it/s] 30%|███       | 385/1280 [03:02<06:08,  2.43it/s] 40%|████      | 513/1280 [03:47<04:58,  2.57it/s] 50%|█████     | 641/1280 [04:33<04:01,  2.65it/s] 60%|██████    | 769/1280 [05:19<03:09,  2.70it/s] 70%|███████   | 897/1280 [06:04<02:20,  2.73it/s] 80%|████████  | 1025/1280 [06:50<01:32,  2.76it/s] 90%|█████████ | 1153/1280 [07:35<00:45,  2.77it/s]100%|██████████| 1280/1280 [07:35<00:00,  2.81it/s]
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang-oai-chat
+Traffic request rate:                    inf       
+Max request concurrency:                 128       
+Successful requests:                     1280      
+Benchmark duration (s):                  455.88    
+Total input tokens:                      5242880   
+Total input text tokens:                 5242880   
+Total generated tokens:                  1310720   
+Total generated tokens (retokenized):    1309989   
+Request throughput (req/s):              2.81      
+Input token throughput (tok/s):          11500.60  
+Output token throughput (tok/s):         2875.15   
+Peak output token throughput (tok/s):    5117.00   
+Peak concurrent requests:                256       
+Total token throughput (tok/s):          14375.75  
+Concurrency:                             127.92    
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   45559.51  
+Median E2E Latency (ms):                 45524.85  
+P90 E2E Latency (ms):                    45690.12  
+P99 E2E Latency (ms):                    45752.51  
+---------------Time to First Token----------------
+Mean TTFT (ms):                          9452.59   
+Median TTFT (ms):                        9648.63   
+P99 TTFT (ms):                           17537.61  
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          35.30     
+Median TPOT (ms):                        35.18     
+P99 TPOT (ms):                           43.37     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           35.33     
+Median ITL (ms):                         27.48     
+P95 ITL (ms):                            27.78     
+P99 ITL (ms):                            28.11     
+Max ITL (ms):                            16921.26  
+==================================================
