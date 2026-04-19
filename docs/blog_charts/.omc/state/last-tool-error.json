@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"git add docs/blog_charts/ && git commit -m \\\"charts: revert blog visuals to light theme\\\" 2>&1 | tail -5 && git push 2>&1 | tail -5\",\"description\":\"Commit light-theme revert and push\"}",
-  "error": "Exit code 128\nwarning: could not open directory 'docs/blog_charts/docs/blog_charts/': No such file or directory\nfatal: pathspec 'docs/blog_charts/' did not match any files",
-  "timestamp": "2026-04-19T08:27:31.533Z",
-  "retry_count": 1
-}
