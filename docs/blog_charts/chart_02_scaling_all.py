@@ -3,8 +3,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from _data import load_595, series
-from theme_dark import (apply_dark, title_block, MODEL_COLORS, MODEL_DISPLAY,
-                         MODEL_ORDER, TEXT, MUTED, GRID)
+from theme import (apply_theme, title_block, COLORS, MODEL_DISPLAY,
+                   MODEL_ORDER, INK, MUTED, PROFILE_DESC)
 
 OUT = Path(__file__).parent / "scaling_curves_all_profiles.png"
 
@@ -16,11 +16,11 @@ PANEL_TITLES = {
 
 
 def main():
-    apply_dark()
+    apply_theme()
     rows = load_595()
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.4), sharey=False)
-    fig.subplots_adjust(left=0.05, right=0.985, top=0.78, bottom=0.22, wspace=0.22)
+    fig, axes = plt.subplots(1, 3, figsize=(14.5, 5.6), sharey=False)
+    fig.subplots_adjust(left=0.055, right=0.98, top=0.78, bottom=0.20, wspace=0.23)
 
     handles, labels = [], []
 
@@ -31,21 +31,19 @@ def main():
             if not pts:
                 continue
             xs, ys = zip(*pts)
-            (line,) = ax.plot(xs, ys, color=MODEL_COLORS[m],
-                              marker="o", markerfacecolor=MODEL_COLORS[m],
-                              markeredgecolor="#1a1a2e", markeredgewidth=1.2,
+            (line,) = ax.plot(xs, ys, color=COLORS[m], marker="o",
+                              markerfacecolor="white", markeredgewidth=1.8,
                               label=MODEL_DISPLAY[m])
             ix = ys.index(max(ys))
-            knee_x = xs[ix]
-            ax.axvline(knee_x, color=MODEL_COLORS[m], linestyle="--",
-                       linewidth=0.8, alpha=0.35, zorder=1)
-            ax.scatter([knee_x], [ys[ix]], s=110, color=MODEL_COLORS[m],
-                       edgecolor="#1a1a2e", linewidth=1.5, zorder=5)
-            ax.annotate(f"{ys[ix]/1000:.1f}k",
-                        xy=(knee_x, ys[ix]),
-                        xytext=(8, 7), textcoords="offset points",
-                        fontsize=8.5, color=MODEL_COLORS[m],
-                        fontweight="bold")
+            knee_x, knee_y = xs[ix], ys[ix]
+            ax.axvline(knee_x, color=COLORS[m], linestyle="--",
+                       linewidth=0.8, alpha=0.28, zorder=1)
+            ax.scatter([knee_x], [knee_y], s=95, color=COLORS[m],
+                       edgecolor="white", linewidth=1.6, zorder=5)
+            ax.annotate(f"{knee_y/1000:.1f}k @ c={knee_x}",
+                        xy=(knee_x, knee_y),
+                        xytext=(6, 7), textcoords="offset points",
+                        fontsize=8, color=COLORS[m], fontweight="bold")
             if ax is axes[0]:
                 handles.append(line)
                 labels.append(MODEL_DISPLAY[m])
@@ -54,18 +52,18 @@ def main():
         ax.set_xscale("log", base=2)
         ax.set_xticks([1, 2, 4, 8, 16, 32, 64, 128, 256, 512])
         ax.set_xticklabels(["1", "2", "4", "8", "16", "32", "64", "128", "256", "512"])
-        ax.set_title(PANEL_TITLES[profile], loc="left", color=TEXT, pad=8)
-        ax.set_xlabel("Concurrency", color=MUTED)
+        ax.set_title(f"{PANEL_TITLES[profile]}  ·  {PROFILE_DESC[profile]}",
+                     loc="left", color=INK, pad=8)
+        ax.set_xlabel("Concurrent requests", color=MUTED)
         if ax is axes[0]:
-            ax.set_ylabel("Output tok/s", color=MUTED)
+            ax.set_ylabel("Output throughput (tok/s)", color=MUTED)
         ax.set_ylim(0, peak_y * 1.15)
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v/1000:.0f}k"))
-        ax.grid(color=GRID, linewidth=0.4)
 
     fig.legend(handles, labels, loc="lower center",
-               bbox_to_anchor=(0.5, 0.05), ncol=5,
+               bbox_to_anchor=(0.5, 0.03), ncol=5,
                handlelength=1.5, handletextpad=0.55, columnspacing=2.0,
-               labelcolor=TEXT, fontsize=10)
+               fontsize=10)
 
     title_block(
         fig,
