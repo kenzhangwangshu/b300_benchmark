@@ -1,0 +1,237 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776570314748,
+  "projectRoot": "/Users/kenzhang/b300_benchmark",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "analysis": {
+      "path": "analysis",
+      "purpose": null,
+      "fileCount": 13,
+      "lastAccessed": 1776570314736,
+      "keyFiles": [
+        "B300_benchmark_report.md",
+        "B300_cost_input_output_split.md",
+        "B300_sglang_vs_vllm.md",
+        "B300_vs_public_api_pricing.md",
+        "all_runs.csv"
+      ]
+    },
+    "configs": {
+      "path": "configs",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1776570314736,
+      "keyFiles": [
+        "deepseek-r1.yaml",
+        "glm-5.1.yaml",
+        "kimi-k2.5.yaml",
+        "minimax-m2.7-fp8-dual.yaml",
+        "minimax-m2.7.yaml"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 3,
+      "lastAccessed": 1776570314737,
+      "keyFiles": [
+        "ep_nvfp4_results.md",
+        "framework_choice.md",
+        "quantization_block_alignment.md"
+      ]
+    },
+    "results": {
+      "path": "results",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1776570314738,
+      "keyFiles": [
+        "summary_1k1k.md"
+      ]
+    },
+    "results_595": {
+      "path": "results_595",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776570314738,
+      "keyFiles": []
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 18,
+      "lastAccessed": 1776570314738,
+      "keyFiles": [
+        "bench_sweep.sh",
+        "bench_sweep_595.sh",
+        "check_kimi_download.sh",
+        "launch_server.sh",
+        "patch_modelopt_ep.py"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "graphs/chart_01_hero_ranking.py",
+      "accessCount": 3,
+      "lastAccessed": 1776573316669,
+      "type": "file"
+    },
+    {
+      "path": "graphs/output/chart_01_hero_ranking.png",
+      "accessCount": 3,
+      "lastAccessed": 1776573323506,
+      "type": "file"
+    },
+    {
+      "path": "graphs/theme.py",
+      "accessCount": 2,
+      "lastAccessed": 1776573274042,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 1,
+      "lastAccessed": 1776571129696,
+      "type": "file"
+    },
+    {
+      "path": "SOP.md",
+      "accessCount": 1,
+      "lastAccessed": 1776571129948,
+      "type": "file"
+    },
+    {
+      "path": "STATUS.md",
+      "accessCount": 1,
+      "lastAccessed": 1776571130167,
+      "type": "file"
+    },
+    {
+      "path": "results_595/sglang/qwen3.5-397b-a17b/1k1k/json/Qwen3.5-397B-A17B-NVFP4_nvfp4_sglang_tp8_conc512_1k1k.json",
+      "accessCount": 1,
+      "lastAccessed": 1776571370606,
+      "type": "file"
+    },
+    {
+      "path": "configs/minimax-m2.7.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1776571406810,
+      "type": "file"
+    },
+    {
+      "path": "configs/qwen3.5-397b-a17b.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1776571406822,
+      "type": "file"
+    },
+    {
+      "path": "graphs/data_loader.py",
+      "accessCount": 1,
+      "lastAccessed": 1776573115846,
+      "type": "file"
+    },
+    {
+      "path": "graphs/chart_02_scaling_curves.py",
+      "accessCount": 1,
+      "lastAccessed": 1776573140442,
+      "type": "file"
+    },
+    {
+      "path": "graphs/chart_03_driver_uplift.py",
+      "accessCount": 1,
+      "lastAccessed": 1776573152257,
+      "type": "file"
+    },
+    {
+      "path": "graphs/chart_04_peak_matrix.py",
+      "accessCount": 1,
+      "lastAccessed": 1776573164116,
+      "type": "file"
+    },
+    {
+      "path": "graphs/chart_05_ttft_curves.py",
+      "accessCount": 1,
+      "lastAccessed": 1776573170934,
+      "type": "file"
+    },
+    {
+      "path": "graphs/chart_06_per_gpu_efficiency.py",
+      "accessCount": 1,
+      "lastAccessed": 1776573180963,
+      "type": "file"
+    },
+    {
+      "path": "graphs/requirements.txt",
+      "accessCount": 1,
+      "lastAccessed": 1776573184927,
+      "type": "file"
+    },
+    {
+      "path": "graphs/README.md",
+      "accessCount": 1,
+      "lastAccessed": 1776573198450,
+      "type": "file"
+    },
+    {
+      "path": "graphs/output/chart_02_scaling_curves.png",
+      "accessCount": 1,
+      "lastAccessed": 1776573227719,
+      "type": "file"
+    },
+    {
+      "path": "graphs/output/chart_03_driver_uplift.png",
+      "accessCount": 1,
+      "lastAccessed": 1776573227962,
+      "type": "file"
+    },
+    {
+      "path": "graphs/output/chart_04_peak_matrix.png",
+      "accessCount": 1,
+      "lastAccessed": 1776573248647,
+      "type": "file"
+    },
+    {
+      "path": "graphs/output/chart_05_ttft_curves.png",
+      "accessCount": 1,
+      "lastAccessed": 1776573248943,
+      "type": "file"
+    },
+    {
+      "path": "graphs/output/chart_06_per_gpu_efficiency.png",
+      "accessCount": 1,
+      "lastAccessed": 1776573249000,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
