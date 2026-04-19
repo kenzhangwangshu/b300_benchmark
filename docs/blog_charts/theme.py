@@ -45,7 +45,7 @@ PROFILE_DESC = {
     "4k1k": "4096 in / 1024 out",
 }
 
-FOOTER_DEFAULT = "Source: Cornerstone Cloud — github.com/BlacktraderKhan/b300_benchmark"
+FOOTER_DEFAULT = "Source: CoCloud AI — github.com/kenzhangwangshu/b300_benchmark"
 
 
 def apply_theme():
