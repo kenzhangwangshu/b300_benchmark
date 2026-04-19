@@ -1,0 +1,13 @@
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Container</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">vLLM Version</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Driver 590</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Driver 595</th>
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Notes</th>
+</tr>
+<tr><td style="padding:8px">NGC 26.03</td><td style="padding:8px;text-align:center">0.17.1</td><td style="padding:8px;text-align:center;color:#F44336">Crashes at conc&ge;16</td><td style="padding:8px;text-align:center;color:#4CAF50">&#10003; Stable</td><td style="padding:8px">Has DeepGEMM, needs 595+</td></tr>
+<tr><td style="padding:8px">NGC 26.01</td><td style="padding:8px;text-align:center">0.13.0</td><td style="padding:8px;text-align:center;color:#4CAF50">&#10003; Stable</td><td style="padding:8px;text-align:center;color:#4CAF50">&#10003; Stable</td><td style="padding:8px">No DeepGEMM, no B300 MoE config</td></tr>
+<tr><td style="padding:8px">pip install vllm</td><td style="padding:8px;text-align:center">0.19.0</td><td style="padding:8px;text-align:center;color:#F44336">CUTLASS crash</td><td style="padding:8px;text-align:center;color:#F44336">CUTLASS crash</td><td style="padding:8px">SM103 not in prebuilt binaries</td></tr>
+</table>
+<p style="font-size:12px;color:#888">B300 SXM6 AC (SM 103a). Bare-metal pip install fails on all driver versions &mdash; always use Docker containers.</p>

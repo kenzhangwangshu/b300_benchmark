@@ -1,0 +1,15 @@
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Config</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">GPUs/Instance</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Replicas</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Cluster tok/s</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Revenue/hr</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Cost/hr</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Gross Margin</th>
+</tr>
+<tr style="background:#1a2a1a"><td style="padding:8px;font-weight:bold">TP=1 (horizontal)</td><td style="padding:8px;text-align:center">1</td><td style="padding:8px;text-align:center;font-weight:bold">768</td><td style="padding:8px;text-align:center;font-weight:bold">7.2M</td><td style="padding:8px;text-align:center">$21.7K</td><td style="padding:8px;text-align:center">$3.1K</td><td style="padding:8px;text-align:center;color:#4CAF50;font-weight:bold">85.5%</td></tr>
+<tr><td style="padding:8px">TP=8 (per-node)</td><td style="padding:8px;text-align:center">8</td><td style="padding:8px;text-align:center">96</td><td style="padding:8px;text-align:center">~1.5M</td><td style="padding:8px;text-align:center">$4.6K</td><td style="padding:8px;text-align:center">$3.1K</td><td style="padding:8px;text-align:center">31.4%</td></tr>
+<tr><td style="padding:8px">TP=8 EP=4 (multi-node)</td><td style="padding:8px;text-align:center">32</td><td style="padding:8px;text-align:center">24</td><td style="padding:8px;text-align:center">~1.5M</td><td style="padding:8px;text-align:center">$4.6K</td><td style="padding:8px;text-align:center">$3.1K</td><td style="padding:8px;text-align:center">31.4%</td></tr>
+</table>
+<p style="font-size:12px;color:#888">96-node cluster (768 GPUs), MiniMax M2.7 NVFP4. Revenue at OpenRouter pricing ($0.30/MTok input, $1.20/MTok output). GPU cost at $4.10/GPU-hr. TP=1 possible because NVFP4 weights (115 GB) fit in one B300 GPU (288 GB).</p>

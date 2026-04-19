@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>B300 Blog Tables &mdash; Substack-ready</title>
+<style>body{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:880px;margin:32px auto;padding:0 20px;color:#222;line-height:1.5}h2{margin-top:40px;color:#1a1a2e;border-bottom:1px solid #ccc;padding-bottom:6px}small{color:#888}</style>
+</head>
+<body>
+
+<p><small>Each table below is a self-contained HTML snippet. To paste one into Substack: open this file in a browser, scroll to the table, click in the table, <kbd>Cmd/Ctrl-A</kbd> just inside it (or select the table visually), copy, and paste into the Substack editor.</small></p>
+
+<h2>Table 1 &mdash; Hardware Spec  <small>(Section 1: The Setup)</small></h2>
+
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Component</th>
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Specification</th>
+</tr>
+<tr><td style="padding:8px;border-bottom:1px solid #ddd">GPU</td><td style="padding:8px;border-bottom:1px solid #ddd">8&times; NVIDIA B300 SXM6 AC</td></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #ddd">HBM3e per GPU</td><td style="padding:8px;border-bottom:1px solid #ddd">288 GB</td></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #ddd">Total VRAM</td><td style="padding:8px;border-bottom:1px solid #ddd">2,304 GB</td></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #ddd">Memory Bandwidth</td><td style="padding:8px;border-bottom:1px solid #ddd">8 TB/s per GPU</td></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #ddd">NVLink 5</td><td style="padding:8px;border-bottom:1px solid #ddd">1.8 TB/s per GPU</td></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #ddd">TDP</td><td style="padding:8px;border-bottom:1px solid #ddd">1,100W per GPU (8,800W node)</td></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #ddd">Cooling</td><td style="padding:8px;border-bottom:1px solid #ddd">Air-cooled</td></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #ddd">Compute Capability</td><td style="padding:8px;border-bottom:1px solid #ddd">SM 103a</td></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #ddd">Driver</td><td style="padding:8px;border-bottom:1px solid #ddd">595.58.03</td></tr>
+<tr><td style="padding:8px">CUDA</td><td style="padding:8px">13.2</td></tr>
+</table>
+
+<hr>
+
+<h2>Table 2 &mdash; Main Results Matrix  <small>(Section 2: The Numbers)</small></h2>
+
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Model</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Total Params</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Active</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">1k1k (tok/s)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">1k4k (tok/s)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">4k1k (tok/s)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">tok/s/GPU</th>
+</tr>
+<tr style="background:#1a2a1a"><td style="padding:8px;font-weight:bold">DeepSeek R1</td><td style="padding:8px;text-align:center">671B</td><td style="padding:8px;text-align:center">37B</td><td style="padding:8px;text-align:center;font-weight:bold">12,518</td><td style="padding:8px;text-align:center">8,510</td><td style="padding:8px;text-align:center">6,529</td><td style="padding:8px;text-align:center">1,565</td></tr>
+<tr><td style="padding:8px;font-weight:bold">Qwen 3.5 397B</td><td style="padding:8px;text-align:center">397B</td><td style="padding:8px;text-align:center">17B</td><td style="padding:8px;text-align:center">11,124</td><td style="padding:8px;text-align:center">8,901</td><td style="padding:8px;text-align:center">9,151</td><td style="padding:8px;text-align:center">1,391</td></tr>
+<tr><td style="padding:8px;font-weight:bold">MiniMax M2.7</td><td style="padding:8px;text-align:center">230B</td><td style="padding:8px;text-align:center">10B</td><td style="padding:8px;text-align:center">9,710</td><td style="padding:8px;text-align:center">8,579</td><td style="padding:8px;text-align:center">6,258</td><td style="padding:8px;text-align:center">1,214</td></tr>
+<tr><td style="padding:8px;font-weight:bold">GLM-5.1</td><td style="padding:8px;text-align:center">744B</td><td style="padding:8px;text-align:center">40B</td><td style="padding:8px;text-align:center">8,953</td><td style="padding:8px;text-align:center">7,142</td><td style="padding:8px;text-align:center">4,356</td><td style="padding:8px;text-align:center">1,119</td></tr>
+<tr style="color:#888"><td style="padding:8px;font-weight:bold">Kimi K2.5</td><td style="padding:8px;text-align:center">1T+</td><td style="padding:8px;text-align:center">~40B</td><td style="padding:8px;text-align:center">2,523</td><td style="padding:8px;text-align:center">2,654</td><td style="padding:8px;text-align:center">2,277</td><td style="padding:8px;text-align:center">315</td></tr>
+</table>
+<p style="font-size:12px;color:#888">Peak output throughput per profile, B300 SXM6 AC, NVFP4, SGLang 0.5.10.post1, TP=8, driver 595. tok/s/GPU computed from the 1k1k peak.</p>
+
+<hr>
+
+<h2>Table 3 &mdash; Driver 590 vs 595  <small>(Section 4: Driver 595 Uplift)</small></h2>
+
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Model</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Driver 590 (tok/s)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Driver 595 (tok/s)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Delta</th>
+</tr>
+<tr><td style="padding:8px">DeepSeek R1</td><td style="padding:8px;text-align:center">9,891</td><td style="padding:8px;text-align:center;font-weight:bold">12,518</td><td style="padding:8px;text-align:center;color:#4CAF50;font-weight:bold">+26.6%</td></tr>
+<tr><td style="padding:8px">Qwen 3.5 397B</td><td style="padding:8px;text-align:center">10,652</td><td style="padding:8px;text-align:center">11,124</td><td style="padding:8px;text-align:center;color:#4CAF50">+4.4%</td></tr>
+<tr><td style="padding:8px">GLM-5.1</td><td style="padding:8px;text-align:center">8,913</td><td style="padding:8px;text-align:center">8,953</td><td style="padding:8px;text-align:center;color:#4CAF50">+0.4%</td></tr>
+<tr><td style="padding:8px">MiniMax M2.7</td><td style="padding:8px;text-align:center">10,284</td><td style="padding:8px;text-align:center">9,710</td><td style="padding:8px;text-align:center;color:#F44336;font-weight:bold">-5.6%</td></tr>
+<tr><td style="padding:8px">Kimi K2.5</td><td style="padding:8px;text-align:center">2,595</td><td style="padding:8px;text-align:center">2,523</td><td style="padding:8px;text-align:center;color:#F44336">-2.8%</td></tr>
+</table>
+<p style="font-size:12px;color:#888">Peak 1k1k output throughput, same B300 node, same SGLang build, only the NVIDIA driver differs. Sorted by delta.</p>
+
+<hr>
+
+<h2>Table 4 &mdash; Cost per Million Output Tokens  <small>(Section 5: Cost Analysis)</small></h2>
+
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Model</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Peak tok/s</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">tok/s per GPU</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">$/MTok @ $4.10/hr</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">$/MTok @ $6.50/hr</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">vs OpenRouter</th>
+</tr>
+<tr><td style="padding:8px">DeepSeek R1</td><td style="padding:8px;text-align:center">12,518</td><td style="padding:8px;text-align:center">1,565</td><td style="padding:8px;text-align:center;font-weight:bold">$0.73</td><td style="padding:8px;text-align:center">$1.15</td><td style="padding:8px;text-align:center;color:#4CAF50">67% cheaper</td></tr>
+<tr><td style="padding:8px">Qwen 3.5 397B</td><td style="padding:8px;text-align:center">11,124</td><td style="padding:8px;text-align:center">1,391</td><td style="padding:8px;text-align:center">$0.82</td><td style="padding:8px;text-align:center">$1.30</td><td style="padding:8px;text-align:center;color:#4CAF50">&mdash;</td></tr>
+<tr><td style="padding:8px">MiniMax M2.7</td><td style="padding:8px;text-align:center">9,710</td><td style="padding:8px;text-align:center">1,214</td><td style="padding:8px;text-align:center">$0.94</td><td style="padding:8px;text-align:center">$1.49</td><td style="padding:8px;text-align:center;color:#4CAF50">&mdash;</td></tr>
+<tr><td style="padding:8px">GLM-5.1</td><td style="padding:8px;text-align:center">8,953</td><td style="padding:8px;text-align:center">1,119</td><td style="padding:8px;text-align:center">$1.02</td><td style="padding:8px;text-align:center">$1.61</td><td style="padding:8px;text-align:center;color:#4CAF50">&mdash;</td></tr>
+<tr style="color:#888"><td style="padding:8px">Kimi K2.5</td><td style="padding:8px;text-align:center">2,523</td><td style="padding:8px;text-align:center">315</td><td style="padding:8px;text-align:center">$3.61</td><td style="padding:8px;text-align:center">$5.73</td><td style="padding:8px;text-align:center;color:#F44336">more expensive</td></tr>
+</table>
+<p style="font-size:12px;color:#888">Assumes 100% utilization. Formula: (8 GPUs &times; GPU hourly rate) &divide; (peak throughput &times; 3600) &times; 1,000,000. OpenRouter DeepSeek R1 output: $2.19/MTok as of April 2026.</p>
+
+<hr>
+
+<h2>Table 5 &mdash; Cluster Economics, MiniMax M2.7  <small>(Section 5: Cost Analysis)</small></h2>
+
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Config</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">GPUs/Instance</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Replicas</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Cluster tok/s</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Revenue/hr</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Cost/hr</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Gross Margin</th>
+</tr>
+<tr style="background:#1a2a1a"><td style="padding:8px;font-weight:bold">TP=1 (horizontal)</td><td style="padding:8px;text-align:center">1</td><td style="padding:8px;text-align:center;font-weight:bold">768</td><td style="padding:8px;text-align:center;font-weight:bold">7.2M</td><td style="padding:8px;text-align:center">$21.7K</td><td style="padding:8px;text-align:center">$3.1K</td><td style="padding:8px;text-align:center;color:#4CAF50;font-weight:bold">85.5%</td></tr>
+<tr><td style="padding:8px">TP=8 (per-node)</td><td style="padding:8px;text-align:center">8</td><td style="padding:8px;text-align:center">96</td><td style="padding:8px;text-align:center">~1.5M</td><td style="padding:8px;text-align:center">$4.6K</td><td style="padding:8px;text-align:center">$3.1K</td><td style="padding:8px;text-align:center">31.4%</td></tr>
+<tr><td style="padding:8px">TP=8 EP=4 (multi-node)</td><td style="padding:8px;text-align:center">32</td><td style="padding:8px;text-align:center">24</td><td style="padding:8px;text-align:center">~1.5M</td><td style="padding:8px;text-align:center">$4.6K</td><td style="padding:8px;text-align:center">$3.1K</td><td style="padding:8px;text-align:center">31.4%</td></tr>
+</table>
+<p style="font-size:12px;color:#888">96-node cluster (768 GPUs), MiniMax M2.7 NVFP4. Revenue at OpenRouter pricing ($0.30/MTok input, $1.20/MTok output). GPU cost at $4.10/GPU-hr. TP=1 possible because NVFP4 weights (115 GB) fit in one B300 GPU (288 GB).</p>
+
+<hr>
+
+<h2>Table 6 &mdash; EP Failure Data  <small>(Section 6: Engineering Disclosures)</small></h2>
+
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Concurrency</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Throughput (tok/s)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">TTFT (ms)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">TPOT (ms)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Failed</th>
+</tr>
+<tr><td style="padding:8px;text-align:center">1</td><td style="padding:8px;text-align:center">134</td><td style="padding:8px;text-align:center">359</td><td style="padding:8px;text-align:center">7.1</td><td style="padding:8px;text-align:center;color:#4CAF50">0</td></tr>
+<tr><td style="padding:8px;text-align:center">2</td><td style="padding:8px;text-align:center">258</td><td style="padding:8px;text-align:center">67</td><td style="padding:8px;text-align:center">7.7</td><td style="padding:8px;text-align:center;color:#4CAF50">0</td></tr>
+<tr><td style="padding:8px;text-align:center">4</td><td style="padding:8px;text-align:center">469</td><td style="padding:8px;text-align:center">75</td><td style="padding:8px;text-align:center">8.5</td><td style="padding:8px;text-align:center;color:#4CAF50">0</td></tr>
+<tr><td style="padding:8px;text-align:center">8</td><td style="padding:8px;text-align:center;font-weight:bold">815</td><td style="padding:8px;text-align:center">421</td><td style="padding:8px;text-align:center">9.4</td><td style="padding:8px;text-align:center;color:#4CAF50">0</td></tr>
+<tr style="background:#2a1a1a"><td style="padding:8px;text-align:center;font-weight:bold">16</td><td style="padding:8px;text-align:center;color:#F44336;font-weight:bold">146 &#9888;</td><td style="padding:8px;text-align:center;color:#F44336">843</td><td style="padding:8px;text-align:center;color:#F44336;font-weight:bold">1,425</td><td style="padding:8px;text-align:center;color:#F44336;font-weight:bold">96/160</td></tr>
+</table>
+<p style="font-size:12px;color:#888">DeepSeek R1 NVFP4, SGLang, TP=8 with Expert Parallelism enabled. Concurrency 16 triggered catastrophic failure &mdash; 60% of requests returned Internal Server Error, TPOT exploded 150&times;.</p>
+
+<hr>
+
+<h2>Table 7 &mdash; NGC Container Compatibility  <small>(Section 6: Engineering Disclosures)</small></h2>
+
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Container</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">vLLM Version</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Driver 590</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Driver 595</th>
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Notes</th>
+</tr>
+<tr><td style="padding:8px">NGC 26.03</td><td style="padding:8px;text-align:center">0.17.1</td><td style="padding:8px;text-align:center;color:#F44336">Crashes at conc&ge;16</td><td style="padding:8px;text-align:center;color:#4CAF50">&#10003; Stable</td><td style="padding:8px">Has DeepGEMM, needs 595+</td></tr>
+<tr><td style="padding:8px">NGC 26.01</td><td style="padding:8px;text-align:center">0.13.0</td><td style="padding:8px;text-align:center;color:#4CAF50">&#10003; Stable</td><td style="padding:8px;text-align:center;color:#4CAF50">&#10003; Stable</td><td style="padding:8px">No DeepGEMM, no B300 MoE config</td></tr>
+<tr><td style="padding:8px">pip install vllm</td><td style="padding:8px;text-align:center">0.19.0</td><td style="padding:8px;text-align:center;color:#F44336">CUTLASS crash</td><td style="padding:8px;text-align:center;color:#F44336">CUTLASS crash</td><td style="padding:8px">SM103 not in prebuilt binaries</td></tr>
+</table>
+<p style="font-size:12px;color:#888">B300 SXM6 AC (SM 103a). Bare-metal pip install fails on all driver versions &mdash; always use Docker containers.</p>
+
+</body>
+</html>

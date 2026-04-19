@@ -1,0 +1,16 @@
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Model</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Peak tok/s</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">tok/s per GPU</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">$/MTok @ $4.10/hr</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">$/MTok @ $6.50/hr</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">vs OpenRouter</th>
+</tr>
+<tr><td style="padding:8px">DeepSeek R1</td><td style="padding:8px;text-align:center">12,518</td><td style="padding:8px;text-align:center">1,565</td><td style="padding:8px;text-align:center;font-weight:bold">$0.73</td><td style="padding:8px;text-align:center">$1.15</td><td style="padding:8px;text-align:center;color:#4CAF50">67% cheaper</td></tr>
+<tr><td style="padding:8px">Qwen 3.5 397B</td><td style="padding:8px;text-align:center">11,124</td><td style="padding:8px;text-align:center">1,391</td><td style="padding:8px;text-align:center">$0.82</td><td style="padding:8px;text-align:center">$1.30</td><td style="padding:8px;text-align:center;color:#4CAF50">&mdash;</td></tr>
+<tr><td style="padding:8px">MiniMax M2.7</td><td style="padding:8px;text-align:center">9,710</td><td style="padding:8px;text-align:center">1,214</td><td style="padding:8px;text-align:center">$0.94</td><td style="padding:8px;text-align:center">$1.49</td><td style="padding:8px;text-align:center;color:#4CAF50">&mdash;</td></tr>
+<tr><td style="padding:8px">GLM-5.1</td><td style="padding:8px;text-align:center">8,953</td><td style="padding:8px;text-align:center">1,119</td><td style="padding:8px;text-align:center">$1.02</td><td style="padding:8px;text-align:center">$1.61</td><td style="padding:8px;text-align:center;color:#4CAF50">&mdash;</td></tr>
+<tr style="color:#888"><td style="padding:8px">Kimi K2.5</td><td style="padding:8px;text-align:center">2,523</td><td style="padding:8px;text-align:center">315</td><td style="padding:8px;text-align:center">$3.61</td><td style="padding:8px;text-align:center">$5.73</td><td style="padding:8px;text-align:center;color:#F44336">more expensive</td></tr>
+</table>
+<p style="font-size:12px;color:#888">Assumes 100% utilization. Formula: (8 GPUs &times; GPU hourly rate) &divide; (peak throughput &times; 3600) &times; 1,000,000. OpenRouter DeepSeek R1 output: $2.19/MTok as of April 2026.</p>

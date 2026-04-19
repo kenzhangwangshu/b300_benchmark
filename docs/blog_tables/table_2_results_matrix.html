@@ -1,0 +1,17 @@
+<table style="border-collapse:collapse;width:100%">
+<tr style="background:#1a1a2e;color:#e0e0e0">
+<th style="padding:8px;text-align:left;border-bottom:2px solid #4a4a6a">Model</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Total Params</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">Active</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">1k1k (tok/s)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">1k4k (tok/s)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">4k1k (tok/s)</th>
+<th style="padding:8px;text-align:center;border-bottom:2px solid #4a4a6a">tok/s/GPU</th>
+</tr>
+<tr style="background:#1a2a1a"><td style="padding:8px;font-weight:bold">DeepSeek R1</td><td style="padding:8px;text-align:center">671B</td><td style="padding:8px;text-align:center">37B</td><td style="padding:8px;text-align:center;font-weight:bold">12,518</td><td style="padding:8px;text-align:center">8,510</td><td style="padding:8px;text-align:center">6,529</td><td style="padding:8px;text-align:center">1,565</td></tr>
+<tr><td style="padding:8px;font-weight:bold">Qwen 3.5 397B</td><td style="padding:8px;text-align:center">397B</td><td style="padding:8px;text-align:center">17B</td><td style="padding:8px;text-align:center">11,124</td><td style="padding:8px;text-align:center">8,901</td><td style="padding:8px;text-align:center">9,151</td><td style="padding:8px;text-align:center">1,391</td></tr>
+<tr><td style="padding:8px;font-weight:bold">MiniMax M2.7</td><td style="padding:8px;text-align:center">230B</td><td style="padding:8px;text-align:center">10B</td><td style="padding:8px;text-align:center">9,710</td><td style="padding:8px;text-align:center">8,579</td><td style="padding:8px;text-align:center">6,258</td><td style="padding:8px;text-align:center">1,214</td></tr>
+<tr><td style="padding:8px;font-weight:bold">GLM-5.1</td><td style="padding:8px;text-align:center">744B</td><td style="padding:8px;text-align:center">40B</td><td style="padding:8px;text-align:center">8,953</td><td style="padding:8px;text-align:center">7,142</td><td style="padding:8px;text-align:center">4,356</td><td style="padding:8px;text-align:center">1,119</td></tr>
+<tr style="color:#888"><td style="padding:8px;font-weight:bold">Kimi K2.5</td><td style="padding:8px;text-align:center">1T+</td><td style="padding:8px;text-align:center">~40B</td><td style="padding:8px;text-align:center">2,523</td><td style="padding:8px;text-align:center">2,654</td><td style="padding:8px;text-align:center">2,277</td><td style="padding:8px;text-align:center">315</td></tr>
+</table>
+<p style="font-size:12px;color:#888">Peak output throughput per profile, B300 SXM6 AC, NVFP4, SGLang 0.5.10.post1, TP=8, driver 595. tok/s/GPU computed from the 1k1k peak.</p>
